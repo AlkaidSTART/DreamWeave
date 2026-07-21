@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { Skill } from "@/lib/types";
+import type { ApiResponse, Skill } from "@/lib/types";
 
 const skills: Skill[] = [
   {
@@ -50,5 +50,10 @@ const skills: Skill[] = [
 ];
 
 export async function GET() {
-  return NextResponse.json({ skills });
+  const response: ApiResponse<{ skills: Skill[] }> = {
+    success: true,
+    data: { skills },
+  };
+
+  return NextResponse.json(response);
 }

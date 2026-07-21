@@ -10,7 +10,7 @@ export async function GET(
 ) {
   const { jobId } = await params;
 
-  if (!getJobById(jobId)) {
+  if (!(await getJobById(jobId))) {
     return new Response(encodeEvent("error", { error: "任务不存在" }), {
       status: 404,
       headers: { "Content-Type": "text/event-stream" },
@@ -21,9 +21,10 @@ export async function GET(
     start(controller) {
       const encoder = new TextEncoder();
       let previousProgress = -1;
+      let previousStatus = "";
 
-      const interval = setInterval(() => {
-        const job = getJobById(jobId);
+      const interval = setInterval(async () => {
+        const job = await getJobById(jobId);
         if (!job) {
           controller.enqueue(encoder.encode(encodeEvent("error", { error: "任务不存在" })));
           clearInterval(interval);
@@ -31,8 +32,12 @@ export async function GET(
           return;
         }
 
-        if (job.progress !== previousProgress || job.status !== "processing") {
+        const progressChanged = job.progress !== previousProgress;
+        const statusChanged = job.status !== previousStatus;
+
+        if (progressChanged || statusChanged) {
           previousProgress = job.progress;
+          previousStatus = job.status;
           controller.enqueue(
             encoder.encode(
               encodeEvent("progress", {
@@ -55,7 +60,7 @@ export async function GET(
           clearInterval(interval);
           controller.close();
         }
-      }, 400);
+      }, 500);
 
       request.signal.addEventListener("abort", () => {
         clearInterval(interval);

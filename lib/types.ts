@@ -57,3 +57,20 @@ export interface UploadImageResponse {
   width: number;
   height: number;
 }
+
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+export interface StoredImage extends GeneratedImage {
+  jobId: string;
+  blob?: Blob;
+  objectUrl?: string;
+}
+
+export interface StoredJob extends Omit<GenerationJob, "results"> {
+  results: StoredImage[];
+}
