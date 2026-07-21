@@ -51,6 +51,9 @@ export default function Home() {
       <div className="home-liquid-bg">
         <HomeAnimations>
           <section className="relative overflow-hidden">
+            <div className="hero-glow-primary pointer-events-none absolute left-1/4 top-0 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-primary/10 blur-[120px] dark:bg-primary/15" />
+            <div className="hero-glow-mint pointer-events-none absolute right-1/4 top-32 h-[400px] w-[400px] translate-x-1/2 rounded-full bg-mint-400/10 blur-[100px] dark:bg-mint-400/10" />
+
             <div className="relative mx-auto max-w-5xl px-4 py-24 text-center md:px-6 md:py-32 lg:px-8">
               <div className="hero-badge mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-xl">
                 <Sparkles className="h-4 w-4 text-primary" />
@@ -96,7 +99,7 @@ export default function Home() {
                   className="reveal-card glass rounded-2xl p-6 text-center"
                 >
                   <stat.icon className="mx-auto h-6 w-6 text-primary" />
-                  <p className="mt-3 font-display text-3xl font-semibold text-foreground">
+                  <p className="stat-value mt-3 font-display text-3xl font-semibold text-foreground">
                     {stat.value}
                   </p>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
@@ -107,10 +110,10 @@ export default function Home() {
 
           <section className="reveal-section mx-auto max-w-6xl px-4 py-20 md:px-6 md:py-28 lg:px-8">
             <div className="mb-12 text-center">
-              <h2 className="font-display text-3xl font-semibold text-foreground md:text-4xl">
+              <h2 className="section-headline font-display text-3xl font-semibold text-foreground md:text-4xl">
                 三种创作方式
               </h2>
-              <p className="mt-3 text-muted-foreground">
+              <p className="section-subline mt-3 text-muted-foreground">
                 选择最适合你的表达方式
               </p>
             </div>
@@ -136,19 +139,19 @@ export default function Home() {
           <section className="reveal-section relative overflow-hidden">
             <div className="mx-auto max-w-6xl px-4 py-20 md:px-6 md:py-28 lg:px-8">
               <div className="mb-12 text-center">
-                <h2 className="font-display text-3xl font-semibold text-foreground md:text-4xl">
+                <h2 className="section-headline font-display text-3xl font-semibold text-foreground md:text-4xl">
                   三步开始创作
                 </h2>
-                <p className="mt-3 text-muted-foreground">
+                <p className="section-subline mt-3 text-muted-foreground">
                   从想法到成品，只需几分钟
                 </p>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-3">
-                {steps.map((item) => (
+              <div className="relative grid gap-6 md:grid-cols-3">
+                {steps.map((item, index) => (
                   <div
                     key={item.step}
-                    className="reveal-card glass relative rounded-2xl p-6"
+                    className="step-card glass relative rounded-2xl p-6"
                   >
                     <span className="absolute right-4 top-4 font-display text-4xl font-bold text-foreground/5">
                       {item.step}
@@ -162,6 +165,9 @@ export default function Home() {
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {item.description}
                     </p>
+                    {index < steps.length - 1 && (
+                      <div className="step-connector absolute left-full top-1/2 hidden h-px w-6 -translate-y-1/2 bg-gradient-to-r from-border to-primary/30 md:block" />
+                    )}
                   </div>
                 ))}
               </div>
@@ -173,10 +179,10 @@ export default function Home() {
           <section className="reveal-section relative overflow-hidden">
             <div className="mx-auto max-w-5xl px-4 py-24 text-center md:px-6 lg:px-8">
               <Sparkles className="mx-auto h-10 w-10 text-primary" />
-              <h2 className="mt-4 font-display text-3xl font-semibold text-foreground md:text-4xl">
+              <h2 className="section-headline mt-4 font-display text-3xl font-semibold text-foreground md:text-4xl">
                 免费开始创作
               </h2>
-              <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+              <p className="section-subline mx-auto mt-3 max-w-xl text-muted-foreground">
                 无需注册，立即体验 AI 生图的无限可能。让你的每一个想法都变成可视化的作品。
               </p>
               <Button size="lg" className="mt-8" asChild>

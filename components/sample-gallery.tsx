@@ -78,7 +78,7 @@ export function SampleGallery({ className }: { className?: string }) {
         {samples.map((item, index) => (
           <div
             key={index}
-            className="group relative aspect-[3/4] overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm backdrop-blur-md"
+            className="sample-item group relative aspect-[3/4] overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm backdrop-blur-md"
           >
             <Image
               src={getSampleUrl(item.prompt)}

@@ -23,7 +23,7 @@ export function Header() {
           className="flex items-center gap-2 text-foreground transition-opacity hover:opacity-80"
         >
           <Sparkles className="h-6 w-6 text-primary" />
-          <span className="font-display text-xl font-semibold tracking-tight">
+          <span className="font-logo text-xl font-semibold tracking-tight">
             Dreamweave
           </span>
         </Link>

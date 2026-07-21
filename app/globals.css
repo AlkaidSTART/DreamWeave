@@ -153,6 +153,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-satoshi);
+  --font-logo: "Outfit", var(--font-geist-sans), sans-serif;
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
