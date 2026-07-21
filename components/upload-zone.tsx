@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, type DragEvent, type ChangeEvent } from "react";
-import { Upload, X, ImageIcon } from "lucide-react";
+import Image from "next/image";
+import { X, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface UploadZoneProps {

@@ -1,7 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import { Download, Maximize2, RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { GeneratedImage } from "@/lib/types";
@@ -21,11 +21,12 @@ export function ImageResultCard({
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card-elevated p-3 shadow-sm">
       <div className="relative aspect-square overflow-hidden rounded-[10px] bg-card">
         {image.status === "completed" && image.url ? (
-          <img
+          <Image
             src={image.url}
             alt="生成结果"
-            className="h-full w-full object-cover animate-reveal"
-            loading="lazy"
+            fill
+            className="object-cover animate-reveal"
+            sizes="(max-width: 640px) 100vw, 50vw"
           />
         ) : image.status === "failed" ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-error">

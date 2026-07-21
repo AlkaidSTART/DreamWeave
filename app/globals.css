@@ -2,6 +2,14 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/Satoshi-Variable.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #fafafa;
   --foreground: #18181b;
@@ -64,6 +72,8 @@
   --page-padding-x-md: 24px;
   --page-padding-x-lg: 32px;
   --page-padding-x-xl: 48px;
+
+  --font-satoshi: "Satoshi", var(--font-geist-sans), sans-serif;
 }
 
 .dark {

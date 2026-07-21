@@ -27,8 +27,8 @@ export async function createGeneration(
   return handleResponse<CreateGenerationResponse>(response);
 }
 
-export async function getJob(jobId: string): Promise<GenerationJob> {
-  const response = await fetch(`${API_BASE}/jobs/${jobId}`);
+export async function getJob(jobId: string, baseUrl?: string): Promise<GenerationJob> {
+  const response = await fetch(`${baseUrl ?? ""}${API_BASE}/jobs/${jobId}`);
   return handleResponse<GenerationJob>(response);
 }
 

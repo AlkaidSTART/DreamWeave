@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { Skill } from "@/lib/types";
 
@@ -24,11 +25,12 @@ export function SkillCard({ skill, selected, onClick }: SkillCardProps) {
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-[10px] bg-card-elevated">
         {skill.previewUrl ? (
-          <img
+          <Image
             src={skill.previewUrl}
             alt={skill.name}
-            className="h-full w-full object-cover"
-            loading="lazy"
+            fill
+            className="object-cover"
+            sizes="160px"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">

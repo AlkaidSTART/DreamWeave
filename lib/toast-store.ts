@@ -10,10 +10,24 @@ export interface Toast {
 type Listener = (toasts: Toast[]) => void;
 
 let toasts: Toast[] = [];
+let snapshot: Toast[] = [];
 const listeners = new Set<Listener>();
 
+function updateSnapshot() {
+  const next = [...toasts];
+  if (
+    next.length === snapshot.length &&
+    next.every((toast, index) => toast === snapshot[index])
+  ) {
+    return false;
+  }
+  snapshot = next;
+  return true;
+}
+
 function emit() {
-  listeners.forEach((listener) => listener([...toasts]));
+  if (!updateSnapshot()) return;
+  listeners.forEach((listener) => listener(snapshot));
 }
 
 export function subscribe(listener: Listener) {
@@ -22,11 +36,16 @@ export function subscribe(listener: Listener) {
 }
 
 export function getToasts() {
-  return [...toasts];
+  return snapshot;
 }
 
 export function removeToast(id: string) {
   toasts = toasts.filter((toast) => toast.id !== id);
+  emit();
+}
+
+export function clearToasts() {
+  toasts = [];
   emit();
 }
 

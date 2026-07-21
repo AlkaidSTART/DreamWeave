@@ -4,11 +4,13 @@ import { useSyncExternalStore } from "react";
 import { Toast } from "@/components/ui/toast";
 import { subscribe, getToasts } from "@/lib/toast-store";
 
+const serverSnapshot: never[] = [];
+
 export function Toaster() {
   const toasts = useSyncExternalStore(
     subscribe,
     getToasts,
-    () => [],
+    () => serverSnapshot,
   );
 
   if (toasts.length === 0) return null;
