@@ -295,6 +295,33 @@
     pointer-events: none;
     z-index: -1;
   }
+
+  .home-liquid-bg {
+    position: relative;
+  }
+
+  .home-liquid-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(ellipse at 15% 8%, rgba(99, 102, 241, 0.11) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 18%, rgba(20, 184, 166, 0.09) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 52%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 25% 88%, rgba(20, 184, 166, 0.07) 0%, transparent 40%),
+      radial-gradient(ellipse at 80% 82%, rgba(99, 102, 241, 0.07) 0%, transparent 45%);
+    pointer-events: none;
+  }
+
+  .dark .home-liquid-bg::before {
+    background:
+      radial-gradient(ellipse at 15% 8%, rgba(99, 102, 241, 0.13) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 18%, rgba(20, 184, 166, 0.10) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 52%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 25% 88%, rgba(20, 184, 166, 0.08) 0%, transparent 40%),
+      radial-gradient(ellipse at 80% 82%, rgba(99, 102, 241, 0.08) 0%, transparent 45%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
