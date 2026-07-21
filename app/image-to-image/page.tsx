@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
+import { PageEntrance } from "@/components/page-entrance";
 import { GenerationForm } from "@/components/generation-form";
 import { createGeneration, uploadImage } from "@/lib/api";
 import { toast } from "@/stores/toast-store";
@@ -50,21 +51,23 @@ export default function ImageToImagePage() {
   };
 
   return (
-    <PageShell
-      title="图生图"
-      description="上传参考图片，AI 将在此基础上创作新作品"
-      backHref="/"
-      className="pb-20"
-    >
-      <div className="mx-auto max-w-3xl px-4 pt-6 md:px-6 lg:px-8">
-        <GenerationForm
-          type="image-to-image"
-          inputImage={inputImage}
-          onInputImageChange={handleInputImageChange}
-          onSubmit={handleSubmit}
-          isLoading={isUploading}
-        />
-      </div>
-    </PageShell>
+    <PageEntrance>
+      <PageShell
+        title="图生图"
+        description="上传参考图片，AI 将在此基础上创作新作品"
+        backHref="/"
+        className="pb-20"
+      >
+        <div className="mx-auto max-w-3xl px-4 pt-6 md:px-6 lg:px-8">
+          <GenerationForm
+            type="image-to-image"
+            inputImage={inputImage}
+            onInputImageChange={handleInputImageChange}
+            onSubmit={handleSubmit}
+            isLoading={isUploading}
+          />
+        </div>
+      </PageShell>
+    </PageEntrance>
   );
 }
