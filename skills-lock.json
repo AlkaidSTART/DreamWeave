@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "gsap-frameworks": {
+      "source": "greensock/gsap-skills",
+      "sourceType": "github",
+      "skillPath": "skills/gsap-frameworks/SKILL.md",
+      "computedHash": "4852e85a48088d9044b08ebd1db607915b628c0c3ec7e04300713f546728fbdf"
+    }
+  }
+}
