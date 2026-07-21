@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
+  { href: "/", label: "主页" },
   { href: "/text-to-image", label: "文生图" },
   { href: "/image-to-image", label: "图生图" },
 ];
