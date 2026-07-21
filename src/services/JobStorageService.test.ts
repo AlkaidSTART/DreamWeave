@@ -80,6 +80,13 @@ describe("JobStorageService", () => {
     expect(retrieved?.results[0].status).toBe("completed");
   });
 
+  it("should update refined prompt", async () => {
+    await service.save(job);
+    await service.updatePrompt(job.id, "refined prompt");
+    const retrieved = await service.get(job.id);
+    expect(retrieved?.refinedPrompt).toBe("refined prompt");
+  });
+
   it("should delete a job", async () => {
     await service.save(job);
     await service.delete(job.id);

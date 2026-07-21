@@ -2,7 +2,10 @@ import { Worker } from "bullmq";
 import { getRedisConnection } from "@/src/queue/connection";
 import { ImageGenerationService } from "@/src/services/ImageGenerationService";
 import { jobStorage } from "@/src/services/JobStorageService";
+import { promptService } from "@/src/services/PromptService";
+import { getSkillTemplate } from "@/src/skills/templates";
 import type { ImageGenerationJobData } from "@/src/queue/imageGenerationQueue";
+import type { CreateGenerationRequest } from "@/lib/types";
 
 let worker: Worker<ImageGenerationJobData> | null = null;
 
@@ -12,6 +15,21 @@ function getInitialProgress(index: number, total: number): number {
 
 function getCompletionProgress(index: number, total: number): number {
   return Math.round(((index + 1) / total) * 100);
+}
+
+async function refinePrompt(
+  jobId: string,
+  request: CreateGenerationRequest,
+): Promise<{ refinedPrompt: string; requestWithRefinedPrompt: CreateGenerationRequest }> {
+  const skillTemplate = getSkillTemplate(request.skillId);
+  const refinedPrompt = await promptService.refine(request.prompt, request.type, skillTemplate);
+
+  await jobStorage.updatePrompt(jobId, refinedPrompt);
+
+  return {
+    refinedPrompt,
+    requestWithRefinedPrompt: { ...request, prompt: refinedPrompt },
+  };
 }
 
 export function startImageGenerationWorker(): Worker<ImageGenerationJobData> {
@@ -30,13 +48,16 @@ export function startImageGenerationWorker(): Worker<ImageGenerationJobData> {
 
       await jobStorage.updateStatus(jobId, "processing");
 
+      const { refinedPrompt, requestWithRefinedPrompt } = await refinePrompt(jobId, request);
+      storedJob.refinedPrompt = refinedPrompt;
+
       const total = request.imageCount;
 
       for (let index = 0; index < total; index += 1) {
         await jobStorage.updateProgress(jobId, getInitialProgress(index, total));
 
         try {
-          const image = await service.generateImage(request, storedJob, index);
+          const image = await service.generateImage(requestWithRefinedPrompt, storedJob, index);
           await jobStorage.updateResult(jobId, image);
           await jobStorage.updateProgress(jobId, getCompletionProgress(index, total));
         } catch (error) {

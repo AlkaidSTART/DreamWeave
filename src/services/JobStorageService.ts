@@ -59,6 +59,14 @@ export class JobStorageService {
     await this.save(job);
   }
 
+  async updatePrompt(jobId: string, refinedPrompt: string): Promise<void> {
+    const job = await this.get(jobId);
+    if (!job) return;
+    job.refinedPrompt = refinedPrompt;
+    job.updatedAt = new Date().toISOString();
+    await this.save(job);
+  }
+
   async delete(jobId: string): Promise<void> {
     await this.connection.del(this.getKey(jobId));
   }
