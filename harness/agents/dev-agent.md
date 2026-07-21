@@ -21,44 +21,58 @@
 
 ## 操作流程
 
-### 阶段 1: 需求理解
+### 阶段 1: 任务分析
 
-1. 阅读需求文档（PRD）
-2. 理解功能需求和优先级
-3. 确认技术方案
+参考 [01-任务分析](../workflows/01-任务分析.md)：
+- 识别任务类型和类别
+- 分析任务范围和依赖
 
 ### 阶段 2: 环境准备
 
-1. 从`develop`分支创建功能分支
-2. 安装依赖：`npm install`
-3. 启动开发服务器：`npm run dev`
+参考 [03-代码实现](../workflows/03-代码实现.md)：
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/my-feature
+npm install
+npm run dev
+```
 
 ### 阶段 3: 代码实现
 
-1. 遵循[编码规范](../rules/编码规范.md)
-2. 使用TypeScript严格模式
-3. 组件默认使用Server Components
-4. 所有公共函数添加JSDoc注释
+参考 [03-代码实现](../workflows/03-代码实现.md)：
+- 遵循[TypeScript规范](../rules/01-typescript规范.md)
+- 使用TypeScript严格模式
+- 组件默认使用Server Components
+- 所有公共函数添加JSDoc注释
 
-### 阶段 4: 测试编写
+### 阶段 4: 测试验证
 
-1. 编写单元测试（TDD）
-2. 运行测试：`npm run test:unit`
-3. 确保测试覆盖率≥80%
+参考 [04-测试验证](../workflows/04-测试验证.md)：
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm run test:unit
+```
 
-### 阶段 5: 提交代码
+### 阶段 5: 代码提交
 
-1. 运行Lint检查：`npm run lint`
-2. 运行类型检查：`npm run typecheck`
-3. 提交代码（Conventional Commits格式）
+参考 [05-代码提交](../workflows/05-代码提交.md)：
+- 使用Conventional Commits格式
+- 推送到远程dev分支
+- 发起Pull Request
 
 ## 约束参考
 
 | 约束类型 | 文档路径 |
 |----------|----------|
-| 编码规范 | `../rules/编码规范.md` |
-| 架构约束 | `../rules/架构约束.md` |
-| 项目约束 | `../rules/项目约束.md` |
+| TypeScript规范 | `../rules/01-typescript规范.md` |
+| 组件规范 | `../rules/02-组件规范.md` |
+| API规范 | `../rules/03-API规范.md` |
+| 服务层规范 | `../rules/05-服务层规范.md` |
+| 架构约束总览 | `../rules/01-架构约束.md` |
+| 项目约束总览 | `../rules/02-编码约束.md` |
 
 ## 输出产物
 
