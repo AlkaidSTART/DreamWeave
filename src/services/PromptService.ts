@@ -25,12 +25,17 @@ const COMPOSITION_PHRASES = [
   "层次丰富",
 ];
 
-const IMAGE_TO_IMAGE_ENHANCEMENTS = [
-  "高信息密度",
-  "保留原图结构",
-  "丰富细节",
+const IMAGE_TO_IMAGE_ADD_OR_REMOVE = [
+  "添加丰富细节",
   "清晰纹理",
-  "专业质感",
+  "移除低质量",
+  "移除模糊元素",
+];
+
+const IMAGE_TO_IMAGE_PRESERVE = [
+  "保留原图主体结构",
+  "保留核心构图",
+  "保留原图空间关系",
 ];
 
 function cleanPrompt(prompt: string): string {
@@ -48,21 +53,42 @@ function applySkillTemplate(prompt: string, template?: string): string {
   return template.replace(/\{prompt\}/g, prompt);
 }
 
+function buildImageToImagePrompt(
+  changeRequest: string,
+  styleOrScene?: string,
+): string {
+  const parts: string[] = [];
+
+  if (changeRequest) {
+    parts.push(`改变要求：${changeRequest}`);
+  }
+
+  if (styleOrScene) {
+    parts.push(`新风格/场景：${styleOrScene}`);
+  }
+
+  parts.push(`需要添加或移除的元素：${IMAGE_TO_IMAGE_ADD_OR_REMOVE.join("、")}`);
+  parts.push(`需要保留的元素：${IMAGE_TO_IMAGE_PRESERVE.join("、")}`);
+
+  return parts.join("，");
+}
+
 export class PromptService {
   async refine(prompt: string, type: GenerationType, skillTemplate?: string): Promise<string> {
     if (!prompt.trim()) return prompt;
 
     let refined = cleanPrompt(prompt);
 
+    if (type === "image-to-image") {
+      const styleOrScene = skillTemplate
+        ? applySkillTemplate(refined, skillTemplate)
+        : undefined;
+      return buildImageToImagePrompt(refined, styleOrScene);
+    }
+
     if (skillTemplate) {
       refined = applySkillTemplate(refined, skillTemplate);
       refined = cleanPrompt(refined);
-    }
-
-    if (type === "image-to-image") {
-      refined = appendIfMissing(refined, IMAGE_TO_IMAGE_ENHANCEMENTS);
-      refined = appendIfMissing(refined, QUALITY_PHRASES.slice(0, 2));
-      return refined;
     }
 
     refined = appendIfMissing(refined, STYLE_PHRASES);
