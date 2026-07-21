@@ -44,6 +44,12 @@ export interface CreateGenerationRequest {
   imageCount: number;
   skillId?: string;
   inputImage?: string | null;
+  // Agnes AI 参数，未传时使用环境变量默认值
+  model?: string;
+  size?: string;
+  ratio?: string;
+  returnBase64?: boolean;
+  responseFormat?: "url" | "b64_json";
 }
 
 export interface CreateGenerationResponse {

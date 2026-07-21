@@ -9,6 +9,11 @@ const createGenerationSchema = z.object({
   imageCount: z.number().int().min(1).max(4),
   skillId: z.string().optional(),
   inputImage: z.string().nullable().optional(),
+  model: z.string().optional(),
+  size: z.string().optional(),
+  ratio: z.string().optional(),
+  returnBase64: z.boolean().optional(),
+  responseFormat: z.enum(["url", "b64_json"]).optional(),
 });
 
 export async function POST(request: Request) {
