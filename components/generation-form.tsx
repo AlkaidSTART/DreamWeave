@@ -10,7 +10,7 @@ import { CountSelector } from "@/components/count-selector";
 import { SkillCard } from "@/components/skill-card";
 import { UploadZone } from "@/components/upload-zone";
 import { fetchSkills } from "@/lib/api";
-import { toast } from "@/lib/toast-store";
+import { toast } from "@/stores/toast-store";
 import type {
   CreateGenerationRequest,
   GenerationType,

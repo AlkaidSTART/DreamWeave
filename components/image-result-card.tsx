@@ -18,8 +18,8 @@ export function ImageResultCard({
   onRegenerate,
 }: ImageResultCardProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card-elevated p-3 shadow-sm">
-      <div className="relative aspect-square overflow-hidden rounded-[10px] bg-card">
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card/70 p-3 shadow-sm backdrop-blur-md">
+      <div className="relative aspect-square overflow-hidden rounded-[10px] bg-card/80">
         {image.status === "completed" && image.url ? (
           <Image
             src={image.url}

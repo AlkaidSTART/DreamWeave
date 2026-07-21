@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
 import { GenerationForm } from "@/components/generation-form";
 import { createGeneration } from "@/lib/api";
-import { toast } from "@/lib/toast-store";
+import { toast } from "@/stores/toast-store";
 import type { CreateGenerationRequest } from "@/lib/types";
 
 export default function TextToImagePage() {

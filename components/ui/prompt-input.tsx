@@ -25,7 +25,7 @@ export const PromptInput = forwardRef<HTMLTextAreaElement, PromptInputProps>(
           onChange={onChange}
           maxLength={maxLength}
           className={cn(
-            "min-h-[120px] max-h-[320px] w-full resize-y rounded-2xl border bg-card p-4 text-base leading-relaxed text-foreground placeholder:text-muted-foreground transition-all duration-150 ease-smooth focus-visible:outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:bg-disabled",
+            "min-h-[120px] max-h-[320px] w-full resize-y rounded-2xl border bg-card/80 p-4 text-base leading-relaxed text-foreground placeholder:text-muted-foreground transition-all duration-150 ease-smooth focus-visible:outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:bg-disabled backdrop-blur-xl",
             error
               ? "border-error bg-error/[0.04] focus-visible:border-error focus-visible:ring-error/15"
               : "border-border",

@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { Type, Image, Wand2, ArrowRight, Sparkles } from "lucide-react";
+import { Type, Image, Wand2, ArrowRight, Sparkles, Play } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { FeatureCard } from "@/components/feature-card";
+import { SampleGallery } from "@/components/sample-gallery";
+import { Footer } from "@/components/footer";
 
 export default function Home() {
   return (
-    <PageShell>
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-500/10 via-transparent to-mint-500/10 opacity-60" />
+    <PageShell footer={<Footer />}>
+      <section className="ambient-light relative overflow-hidden">
         <div className="mx-auto max-w-5xl px-4 py-20 text-center md:px-6 md:py-28 lg:px-8">
           <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground md:text-5xl lg:text-6xl">
             让想象触手可及
@@ -20,12 +21,14 @@ export default function Home() {
             <Button size="lg" rightIcon={<ArrowRight className="h-5 w-5" />} asChild>
               <Link href="/text-to-image">开始创作</Link>
             </Button>
-            <Button variant="secondary" size="lg" asChild>
-              <Link href="/image-to-image">图生图体验</Link>
+            <Button variant="secondary" size="lg" leftIcon={<Play className="h-4 w-4" />} asChild>
+              <Link href="#samples">查看示例</Link>
             </Button>
           </div>
         </div>
       </section>
+
+      <SampleGallery />
 
       <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 lg:px-8">
         <div className="mb-10 text-center">

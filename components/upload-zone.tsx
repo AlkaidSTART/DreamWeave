@@ -56,10 +56,10 @@ export function UploadZone({
       onDragLeave={handleDragLeave}
       onClick={() => inputRef.current?.click()}
       className={cn(
-        "group relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed bg-card-elevated p-6 text-center transition-all duration-200 ease-smooth",
+        "group relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed bg-card/60 p-6 text-center transition-all duration-200 ease-smooth backdrop-blur-xl",
         isDragging
-          ? "border-primary bg-indigo-50 dark:bg-indigo-950/20"
-          : "border-border hover:border-border-accent hover:bg-card",
+          ? "border-primary bg-indigo-50/80 dark:bg-indigo-950/30"
+          : "border-border hover:border-border-accent hover:bg-card/80",
       )}
       role="button"
       tabIndex={0}
@@ -74,11 +74,13 @@ export function UploadZone({
       />
 
       {value ? (
-        <div className="relative flex h-full w-full items-center justify-center">
-          <img
+        <div className="relative h-[180px] w-full">
+          <Image
             src={value}
             alt="上传预览"
-            className="max-h-[180px] rounded-[10px] object-contain shadow-md"
+            fill
+            className="rounded-[10px] object-contain shadow-md"
+            sizes="(max-width: 768px) 100vw, 600px"
           />
           <button
             type="button"

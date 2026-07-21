@@ -1,17 +1,10 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { Toast } from "@/components/ui/toast";
-import { subscribe, getToasts } from "@/lib/toast-store";
-
-const serverSnapshot: never[] = [];
+import { useToastStore } from "@/stores/toast-store";
 
 export function Toaster() {
-  const toasts = useSyncExternalStore(
-    subscribe,
-    getToasts,
-    () => serverSnapshot,
-  );
+  const toasts = useToastStore((state) => state.toasts);
 
   if (toasts.length === 0) return null;
 

@@ -9,6 +9,7 @@ interface PageShellProps {
   description?: string;
   backHref?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ export function PageShell({
   description,
   backHref,
   children,
+  footer,
   className,
 }: PageShellProps) {
   return (
@@ -49,6 +51,7 @@ export function PageShell({
         )}
         {children}
       </main>
+      {footer}
     </div>
   );
 }

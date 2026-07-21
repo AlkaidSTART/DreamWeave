@@ -16,10 +16,10 @@ export function SkillCard({ skill, selected, onClick }: SkillCardProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-[140px] shrink-0 flex-col gap-2 rounded-2xl border bg-card p-3 text-left transition-all duration-200 ease-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background md:w-[160px]",
+        "flex w-[140px] shrink-0 flex-col gap-2 rounded-2xl border bg-card/70 p-3 text-left transition-all duration-200 ease-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background backdrop-blur-md md:w-[160px]",
         selected
           ? "border-primary shadow-glow"
-          : "border-border hover:border-border-accent hover:shadow-md",
+          : "border-border hover:border-border-accent hover:shadow-md hover:bg-card",
       )}
       aria-pressed={selected}
     >

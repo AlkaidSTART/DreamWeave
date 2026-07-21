@@ -1,23 +1,43 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, RefreshCw } from "lucide-react";
+import Image from "next/image";
+import { Download, RefreshCw, Copy, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { ImageResultCard } from "@/components/image-result-card";
 import { getJob, subscribeJobProgress } from "@/lib/api";
-import { toast } from "@/lib/toast-store";
+import { toast } from "@/stores/toast-store";
 import type { GenerationJob, GeneratedImage } from "@/lib/types";
 
 interface ResultViewProps {
   initialJob: GenerationJob;
 }
 
+function useCopied() {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  return { copied, copy };
+}
+
 export function ResultView({ initialJob }: ResultViewProps) {
   const [job, setJob] = useState<GenerationJob>(initialJob);
   const [previewImage, setPreviewImage] = useState<GeneratedImage | null>(null);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const { copied, copy } = useCopied();
 
   useEffect(() => {
     const unsubscribe = subscribeJobProgress(initialJob.id, {
@@ -51,6 +71,19 @@ export function ResultView({ initialJob }: ResultViewProps) {
     }
   };
 
+  const handleCopyPrompt = async (text: string, label: string) => {
+    const ok = await copy(text);
+    if (ok) {
+      toast.success(`${label}已复制`);
+    } else {
+      toast.error("复制失败", "请手动复制");
+    }
+  };
+
+  const handleRegenerate = (image: GeneratedImage) => {
+    toast.info("重新生成开发中", `图片 ${image.id} 的单张重试将在后续版本支持`);
+  };
+
   const completedCount = job.results.filter(
     (result) => result.status === "completed" && result.url,
   ).length;
@@ -67,6 +100,8 @@ export function ResultView({ initialJob }: ResultViewProps) {
     });
   };
 
+  const isImageToImage = job.type === "image-to-image" && Boolean(job.inputImage);
+
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 px-4 pb-20 md:px-6 lg:px-8">
       <Card className="sticky top-20 z-30">
@@ -82,6 +117,11 @@ export function ResultView({ initialJob }: ResultViewProps) {
                 {job.status === "completed" && "生成完成"}
                 {job.status === "failed" && "生成失败"}
               </span>
+              {job.status === "processing" && (
+                <span className="text-xs text-muted-foreground">
+                  预计还需 10-30 秒
+                </span>
+              )}
             </div>
             <Progress value={job.progress} />
           </div>
@@ -100,18 +140,56 @@ export function ResultView({ initialJob }: ResultViewProps) {
         </div>
       </Card>
 
+      {isImageToImage && (
+        <Card className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">原图对比</h2>
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<ImageIcon className="h-4 w-4" />}
+              onClick={() => setShowOriginal((prev) => !prev)}
+            >
+              {showOriginal ? "隐藏原图" : "查看原图"}
+            </Button>
+          </div>
+          {showOriginal && job.inputImage && (
+            <div className="relative aspect-video w-full overflow-hidden rounded-[10px] bg-card-elevated">
+              <Image
+                src={job.inputImage}
+                alt="参考原图"
+                fill
+                className="object-contain"
+                sizes="(max-width: 1024px) 100vw, 1024px"
+              />
+            </div>
+          )}
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {job.results.map((result) => (
           <ImageResultCard
             key={result.id}
             image={result}
             onPreview={setPreviewImage}
+            onRegenerate={handleRegenerate}
           />
         ))}
       </div>
 
       <Card>
-        <h2 className="text-sm font-semibold text-foreground">提示词信息</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">提示词信息</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            onClick={() => handleCopyPrompt(job.refinedPrompt || job.prompt, job.refinedPrompt ? "润色提示词" : "原始提示词")}
+          >
+            {copied ? "已复制" : "复制提示词"}
+          </Button>
+        </div>
         <div className="mt-4 space-y-3">
           <div>
             <span className="text-xs text-muted-foreground">原始提示词</span>
@@ -139,11 +217,16 @@ export function ResultView({ initialJob }: ResultViewProps) {
           role="dialog"
           aria-modal="true"
         >
-          <img
-            src={previewImage.url}
-            alt="预览"
-            className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
-          />
+          <div className="relative h-[90vh] w-[90vw]">
+            <Image
+              src={previewImage.url}
+              alt="预览"
+              fill
+              className="rounded-2xl object-contain shadow-2xl"
+              sizes="90vw"
+              priority
+            />
+          </div>
         </div>
       )}
     </div>

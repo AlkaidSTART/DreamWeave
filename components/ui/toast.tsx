@@ -2,7 +2,7 @@
 
 import { X, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { removeToast, type ToastType } from "@/lib/toast-store";
+import { useToastStore, type ToastType } from "@/stores/toast-store";
 
 interface ToastProps {
   id: string;
@@ -30,7 +30,7 @@ export function Toast({ id, type, title, message }: ToastProps) {
     <div
       role="alert"
       className={cn(
-        "pointer-events-auto flex w-full max-w-[360px] items-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-xl",
+        "pointer-events-auto flex w-full max-w-[360px] items-start gap-3 rounded-2xl border border-border bg-card/90 p-4 shadow-xl backdrop-blur-xl",
         "border-l-4",
         styles[type],
       )}
@@ -46,7 +46,7 @@ export function Toast({ id, type, title, message }: ToastProps) {
       </div>
       <button
         type="button"
-        onClick={() => removeToast(id)}
+        onClick={() => useToastStore.getState().removeToast(id)}
         className="rounded p-1 text-muted-foreground transition-colors hover:bg-card-elevated hover:text-foreground"
         aria-label="关闭提示"
       >
