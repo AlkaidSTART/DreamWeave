@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import { redisConnection } from "@/src/queue/connection";
+import { getRedisConnection } from "@/src/queue/connection";
 import { ImageGenerationService } from "@/src/services/ImageGenerationService";
 import { jobStorage } from "@/src/services/JobStorageService";
 import type { ImageGenerationJobData } from "@/src/queue/imageGenerationQueue";
@@ -55,7 +55,7 @@ export function startImageGenerationWorker(): Worker<ImageGenerationJobData> {
       return { jobId };
     },
     {
-      connection: redisConnection,
+      connection: getRedisConnection(),
       concurrency: 2,
     },
   );

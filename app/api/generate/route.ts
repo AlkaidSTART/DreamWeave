@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const parsed = createGenerationSchema.safeParse(body);
 
     if (!parsed.success) {
-      const message = parsed.error.errors.map((err) => err.message).join("；");
+      const message = parsed.error.issues.map((issue) => issue.message).join("；");
       return NextResponse.json<ApiResponse>(
         { success: false, error: message },
         { status: 400 },

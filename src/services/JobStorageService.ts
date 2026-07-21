@@ -1,23 +1,26 @@
-import { redisConnection } from "@/src/queue/connection";
+import type IORedis from "ioredis";
+import { getRedisConnection } from "@/src/queue/connection";
 import type { GenerationJob, JobStatus } from "@/lib/types";
 
 const JOB_KEY_PREFIX = "dreamweave:job:";
 const JOB_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
 export class JobStorageService {
+  constructor(private readonly connection: IORedis) {}
+
   private getKey(jobId: string): string {
     return `${JOB_KEY_PREFIX}${jobId}`;
   }
 
   async save(job: GenerationJob): Promise<void> {
-    await redisConnection.hset(this.getKey(job.id), {
+    await this.connection.hset(this.getKey(job.id), {
       data: JSON.stringify(job),
     });
-    await redisConnection.expire(this.getKey(job.id), JOB_TTL_SECONDS);
+    await this.connection.expire(this.getKey(job.id), JOB_TTL_SECONDS);
   }
 
   async get(jobId: string): Promise<GenerationJob | null> {
-    const record = await redisConnection.hget(this.getKey(jobId), "data");
+    const record = await this.connection.hget(this.getKey(jobId), "data");
     if (!record) return null;
     try {
       return JSON.parse(record) as GenerationJob;
@@ -57,8 +60,8 @@ export class JobStorageService {
   }
 
   async delete(jobId: string): Promise<void> {
-    await redisConnection.del(this.getKey(jobId));
+    await this.connection.del(this.getKey(jobId));
   }
 }
 
-export const jobStorage = new JobStorageService();
+export const jobStorage = new JobStorageService(getRedisConnection());

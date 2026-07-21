@@ -1,4 +1,4 @@
-import { imageGenerationQueue } from "@/src/queue/imageGenerationQueue";
+import { getImageGenerationQueue } from "@/src/queue/imageGenerationQueue";
 import { startImageGenerationWorker } from "@/src/queue/worker";
 import { jobStorage } from "@/src/services/JobStorageService";
 import type {
@@ -38,7 +38,8 @@ export async function createJob(request: CreateGenerationRequest): Promise<Gener
 
   await jobStorage.save(job);
 
-  await imageGenerationQueue.add("generate", { jobId: id, request }, { jobId: id });
+  const queue = getImageGenerationQueue();
+  await queue.add("generate", { jobId: id, request }, { jobId: id });
 
   return job;
 }

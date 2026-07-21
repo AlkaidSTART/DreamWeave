@@ -1,4 +1,5 @@
 import type {
+  ApiResponse,
   CreateGenerationRequest,
   CreateGenerationResponse,
   GenerationJob,
@@ -13,7 +14,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
     const body = await response.text();
     throw new Error(body || `请求失败：${response.status}`);
   }
-  return response.json() as Promise<T>;
+  const result = (await response.json()) as ApiResponse<T>;
+  if (!result.success) {
+    throw new Error(result.error || "请求失败");
+  }
+  if (result.data === undefined) {
+    throw new Error("响应中缺少数据");
+  }
+  return result.data;
 }
 
 export async function createGeneration(

@@ -1,11 +1,19 @@
 import IORedis from "ioredis";
 
-export function createRedisConnection(): IORedis {
-  const url = process.env.REDIS_URL || "redis://localhost:6379";
-  return new IORedis(url, {
-    maxRetriesPerRequest: null,
-    enableReadyCheck: false,
-  });
+let redisConnection: IORedis | null = null;
+
+export function getRedisConnection(): IORedis {
+  if (!redisConnection || redisConnection.status === "end") {
+    const url = process.env.REDIS_URL || "redis://localhost:6379";
+    redisConnection = new IORedis(url, {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+      lazyConnect: true,
+    });
+  }
+  return redisConnection;
 }
 
-export const redisConnection = createRedisConnection();
+export function createRedisConnection(): IORedis {
+  return getRedisConnection();
+}
