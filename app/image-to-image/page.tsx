@@ -35,12 +35,12 @@ export default function ImageToImagePage() {
         setIsUploading(false);
       }
 
-      const { jobId } = await createGeneration({
+      const job = await createGeneration({
         ...request,
         inputImage: imageUrl,
       });
-      toast.success("任务已提交", "正在基于参考图生成...");
-      router.push(`/result/${jobId}`);
+      toast.success("生成完成", "正在跳转到结果页...");
+      router.push(`/result/${job.id}`);
     } catch (error) {
       setIsUploading(false);
       toast.error(

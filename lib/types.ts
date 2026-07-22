@@ -52,12 +52,6 @@ export interface CreateGenerationRequest {
   responseFormat?: "url" | "b64_json";
 }
 
-export interface CreateGenerationResponse {
-  jobId: string;
-  status: JobStatus;
-  message: string;
-}
-
 export interface UploadImageResponse {
   url: string;
   width: number;

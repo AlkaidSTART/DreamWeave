@@ -2,32 +2,11 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { JobStorageService } from "@/src/services/JobStorageService";
 import type { GenerationJob } from "@/lib/types";
 
-function createMockRedis() {
-  const store = new Map<string, Map<string, string>>();
-
-  return {
-    hset: async (key: string, values: Record<string, string>) => {
-      if (!store.has(key)) store.set(key, new Map());
-      const hash = store.get(key)!;
-      Object.entries(values).forEach(([field, value]) => hash.set(field, value));
-      return 1;
-    },
-    hget: async (key: string, field: string): Promise<string | null> => {
-      return store.get(key)?.get(field) ?? null;
-    },
-    expire: async () => 1,
-    del: async (key: string) => {
-      store.delete(key);
-      return 1;
-    },
-  } as unknown as import("ioredis").default;
-}
-
 describe("JobStorageService", () => {
   let service: JobStorageService;
 
   beforeEach(() => {
-    service = new JobStorageService(createMockRedis());
+    service = new JobStorageService();
   });
 
   const job: GenerationJob = {
@@ -92,5 +71,13 @@ describe("JobStorageService", () => {
     await service.delete(job.id);
     const retrieved = await service.get(job.id);
     expect(retrieved).toBeNull();
+  });
+
+  it("should list jobs in descending order", async () => {
+    const job2: GenerationJob = { ...job, id: "job-2", createdAt: new Date(Date.now() + 1000).toISOString() };
+    await service.save(job);
+    await service.save(job2);
+    const list = await service.list();
+    expect(list.map((item) => item.id)).toEqual(["job-2", "job-1"]);
   });
 });

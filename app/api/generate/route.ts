@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createJob } from "@/lib/job-store";
-import type { ApiResponse, CreateGenerationResponse } from "@/lib/types";
+import type { ApiResponse, GenerationJob } from "@/lib/types";
 
 const createGenerationSchema = z.object({
   type: z.enum(["text-to-image", "image-to-image"]),
@@ -31,13 +31,9 @@ export async function POST(request: Request) {
 
     const job = await createJob(parsed.data);
 
-    const response: ApiResponse<CreateGenerationResponse> = {
+    const response: ApiResponse<GenerationJob> = {
       success: true,
-      data: {
-        jobId: job.id,
-        status: job.status,
-        message: "任务已提交",
-      },
+      data: job,
     };
 
     return NextResponse.json(response);

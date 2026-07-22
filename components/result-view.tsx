@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { ImageResultCard } from "@/components/image-result-card";
-import { getJob, subscribeJobProgress } from "@/lib/api";
+import { getJob } from "@/lib/api";
 import { getJobFromDB, getImagesByJobId, saveJob, saveImage } from "@/lib/db";
 import { toast } from "@/stores/toast-store";
 import type { GenerationJob, GeneratedImage, StoredImage } from "@/lib/types";
@@ -116,37 +116,15 @@ export function ResultView({ initialJob }: ResultViewProps) {
   }, [initialJob]);
 
   useEffect(() => {
-    const unsubscribe = subscribeJobProgress(job.id, {
-      onProgress: (progress) =>
-        setJob((current) => ({ ...current, progress })),
-      onStatusChange: (status) =>
-        setJob((current) => ({ ...current, status: status as GenerationJob["status"] })),
-      onResult: (result) => {
-        setJob((current) => ({
-          ...current,
-          results: current.results.map((item) =>
-            item.id === result.id ? result : item,
-          ),
-        }));
-        if (result.url) {
-          void persistImage(result);
-        }
-      },
-      onComplete: async (completedJob) => {
-        setJob(completedJob);
-        await saveJob(completedJob);
-        completedJob.results.forEach((result) => {
-          if (result.url) void persistImage(result);
-        });
-      },
-      onError: (error) => {
-        toast.error("生成失败", error);
-        setJob((current) => ({ ...current, status: "failed", error }));
-      },
-    });
+    async function persistResults() {
+      await saveJob(job);
+      job.results.forEach((result) => {
+        if (result.url) void persistImage(result);
+      });
+    }
 
-    return () => unsubscribe();
-  }, [job.id, persistImage]);
+    void persistResults();
+  }, [job, persistImage]);
 
   const handleRetry = async () => {
     try {

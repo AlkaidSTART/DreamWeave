@@ -13,9 +13,9 @@ export default function TextToImagePage() {
 
   const handleSubmit = async (request: CreateGenerationRequest) => {
     try {
-      const { jobId } = await createGeneration(request);
-      toast.success("任务已提交", "正在为您生成图片...");
-      router.push(`/result/${jobId}`);
+      const job = await createGeneration(request);
+      toast.success("生成完成", "正在跳转到结果页...");
+      router.push(`/result/${job.id}`);
     } catch (error) {
       toast.error(
         "提交失败",

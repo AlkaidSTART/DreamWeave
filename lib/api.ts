@@ -1,7 +1,6 @@
 import type {
   ApiResponse,
   CreateGenerationRequest,
-  CreateGenerationResponse,
   GenerationJob,
   Skill,
   UploadImageResponse,
@@ -24,15 +23,13 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return result.data;
 }
 
-export async function createGeneration(
-  request: CreateGenerationRequest,
-): Promise<CreateGenerationResponse> {
+export async function createGeneration(request: CreateGenerationRequest): Promise<GenerationJob> {
   const response = await fetch(`${API_BASE}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
   });
-  return handleResponse<CreateGenerationResponse>(response);
+  return handleResponse<GenerationJob>(response);
 }
 
 export async function getJob(jobId: string, baseUrl?: string): Promise<GenerationJob> {
