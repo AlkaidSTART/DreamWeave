@@ -14,6 +14,7 @@ export default function ImageToImagePage() {
   const [inputImage, setInputImage] = useState<string | null>(null);
   const [inputFile, setInputFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputImageChange = (file: File | null, previewUrl: string | null) => {
     setInputFile(file);
@@ -35,18 +36,21 @@ export default function ImageToImagePage() {
         setIsUploading(false);
       }
 
-      const { jobId } = await createGeneration({
+      setIsSubmitting(true);
+      const job = await createGeneration({
         ...request,
         inputImage: imageUrl,
       });
-      toast.success("任务已提交", "正在基于参考图生成...");
-      router.push(`/result/${jobId}`);
+      toast.success("生成完成", "正在跳转到结果页...");
+      router.push(`/result/${job.id}`);
     } catch (error) {
-      setIsUploading(false);
       toast.error(
         "提交失败",
         error instanceof Error ? error.message : "请稍后重试",
       );
+    } finally {
+      setIsUploading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -64,7 +68,7 @@ export default function ImageToImagePage() {
             inputImage={inputImage}
             onInputImageChange={handleInputImageChange}
             onSubmit={handleSubmit}
-            isLoading={isUploading}
+            isLoading={isUploading || isSubmitting}
           />
         </div>
       </PageShell>

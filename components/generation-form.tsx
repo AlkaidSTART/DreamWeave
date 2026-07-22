@@ -5,16 +5,20 @@ import { Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PromptInput } from "@/components/ui/prompt-input";
-import { Spinner } from "@/components/ui/spinner";
 import { CountSelector } from "@/components/count-selector";
+import { GenerationLoader } from "@/components/generation-loader";
 import { SkillCard } from "@/components/skill-card";
 import { UploadZone } from "@/components/upload-zone";
+import { ImageConfigBar } from "@/components/image-config-bar";
 import { fetchSkills } from "@/lib/api";
 import { toast } from "@/stores/toast-store";
+import { DEFAULT_QUALITY, DEFAULT_RATIO } from "@/lib/image-config";
 import type {
   CreateGenerationRequest,
   GenerationType,
   Skill,
+  ImageRatio,
+  ImageQuality,
 } from "@/lib/types";
 
 interface GenerationFormProps {
@@ -36,6 +40,8 @@ export function GenerationForm({
 }: GenerationFormProps) {
   const [prompt, setPrompt] = useState("");
   const [imageCount, setImageCount] = useState(1);
+  const [ratio, setRatio] = useState<ImageRatio>(DEFAULT_RATIO);
+  const [quality, setQuality] = useState<ImageQuality>(DEFAULT_QUALITY);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [selectedSkillId, setSelectedSkillId] = useState<string | undefined>();
   const [skillsLoading, setSkillsLoading] = useState(true);
@@ -65,18 +71,20 @@ export function GenerationForm({
       type,
       prompt: prompt.trim(),
       imageCount,
+      ratio,
+      quality,
       skillId: selectedSkillId,
       inputImage: type === "image-to-image" ? inputImage ?? null : null,
     });
   };
 
   return (
-    <div className={cn("mx-auto w-full max-w-3xl space-y-6", className)}>
+    <div className={cn("relative mx-auto w-full max-w-3xl space-y-6", className)}>
       {type === "image-to-image" && onInputImageChange && (
         <UploadZone value={inputImage} onChange={onInputImageChange} />
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <label htmlFor="prompt" className="text-sm font-medium text-foreground">
           {type === "text-to-image" ? "描述你想要的画面" : "补充描述（可选）"}
         </label>
@@ -92,12 +100,18 @@ export function GenerationForm({
           }
           maxLength={1000}
         />
+        <ImageConfigBar
+          ratio={ratio}
+          quality={quality}
+          onRatioChange={setRatio}
+          onQualityChange={setQuality}
+        />
       </div>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-foreground">风格模板</span>
-          {skillsLoading && <Spinner size="sm" className="text-primary" />}
+          {skillsLoading && <GenerationLoader size="sm" label="" />}
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {skills.map((skill) => (
@@ -127,6 +141,12 @@ export function GenerationForm({
           开始生成
         </Button>
       </div>
+
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl glass-strong">
+          <GenerationLoader size="lg" label="正在创作中..." />
+        </div>
+      )}
     </div>
   );
 }

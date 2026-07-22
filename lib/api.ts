@@ -1,6 +1,6 @@
 import type {
+  ApiResponse,
   CreateGenerationRequest,
-  CreateGenerationResponse,
   GenerationJob,
   Skill,
   UploadImageResponse,
@@ -13,18 +13,23 @@ async function handleResponse<T>(response: Response): Promise<T> {
     const body = await response.text();
     throw new Error(body || `请求失败：${response.status}`);
   }
-  return response.json() as Promise<T>;
+  const result = (await response.json()) as ApiResponse<T>;
+  if (!result.success) {
+    throw new Error(result.error || "请求失败");
+  }
+  if (result.data === undefined) {
+    throw new Error("响应中缺少数据");
+  }
+  return result.data;
 }
 
-export async function createGeneration(
-  request: CreateGenerationRequest,
-): Promise<CreateGenerationResponse> {
+export async function createGeneration(request: CreateGenerationRequest): Promise<GenerationJob> {
   const response = await fetch(`${API_BASE}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
   });
-  return handleResponse<CreateGenerationResponse>(response);
+  return handleResponse<GenerationJob>(response);
 }
 
 export async function getJob(jobId: string, baseUrl?: string): Promise<GenerationJob> {

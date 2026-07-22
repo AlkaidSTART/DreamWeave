@@ -1,4 +1,5 @@
 import type { CreateGenerationRequest, GenerationJob, GeneratedImage } from "@/lib/types";
+import { AgnesProvider } from "@/src/services/AgnesProvider";
 
 export class ImageGenerationError extends Error {
   constructor(message: string, public readonly code: string) {
@@ -78,15 +79,17 @@ export class ImageGenerationService {
   }
 
   private createProvider(): ImageGenerationProvider {
-    const providerName = process.env.IMAGE_GENERATION_PROVIDER || "pollinations";
+    const providerName = process.env.IMAGE_GENERATION_PROVIDER || "agnes";
 
     switch (providerName) {
+      case "agnes":
+        return new AgnesProvider();
       case "pollinations":
         return new PollinationsProvider();
       case "fallback":
         return new FallbackProvider();
       default:
-        return new PollinationsProvider();
+        return new AgnesProvider();
     }
   }
 

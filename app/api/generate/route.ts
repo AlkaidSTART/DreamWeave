@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createJob } from "@/lib/job-store";
-import type { ApiResponse, CreateGenerationResponse } from "@/lib/types";
+import type { ApiResponse, GenerationJob } from "@/lib/types";
 
 const createGenerationSchema = z.object({
   type: z.enum(["text-to-image", "image-to-image"]),
@@ -9,6 +9,12 @@ const createGenerationSchema = z.object({
   imageCount: z.number().int().min(1).max(4),
   skillId: z.string().optional(),
   inputImage: z.string().nullable().optional(),
+  model: z.string().optional(),
+  size: z.string().optional(),
+  ratio: z.enum(["1:1", "3:4", "4:3", "16:9", "9:16", "2:3", "3:2", "21:9"]).optional(),
+  quality: z.enum(["1K", "2K", "3K", "4K"]).optional(),
+  returnBase64: z.boolean().optional(),
+  responseFormat: z.enum(["url", "b64_json"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -17,7 +23,7 @@ export async function POST(request: Request) {
     const parsed = createGenerationSchema.safeParse(body);
 
     if (!parsed.success) {
-      const message = parsed.error.errors.map((err) => err.message).join("；");
+      const message = parsed.error.issues.map((issue) => issue.message).join("；");
       return NextResponse.json<ApiResponse>(
         { success: false, error: message },
         { status: 400 },
@@ -26,13 +32,9 @@ export async function POST(request: Request) {
 
     const job = await createJob(parsed.data);
 
-    const response: ApiResponse<CreateGenerationResponse> = {
+    const response: ApiResponse<GenerationJob> = {
       success: true,
-      data: {
-        jobId: job.id,
-        status: job.status,
-        message: "任务已提交",
-      },
+      data: job,
     };
 
     return NextResponse.json(response);

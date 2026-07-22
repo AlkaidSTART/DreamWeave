@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { Download, RefreshCw, Copy, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Spinner } from "@/components/ui/spinner";
 import { ImageResultCard } from "@/components/image-result-card";
-import { getJob, subscribeJobProgress } from "@/lib/api";
+import { GenerationLoader } from "@/components/generation-loader";
+import { getJob } from "@/lib/api";
+import { getJobFromDB, getImagesByJobId, saveJob, saveImage } from "@/lib/db";
 import { toast } from "@/stores/toast-store";
-import type { GenerationJob, GeneratedImage } from "@/lib/types";
+import type { GenerationJob, GeneratedImage, StoredImage } from "@/lib/types";
 
 interface ResultViewProps {
   initialJob: GenerationJob;
@@ -33,39 +34,103 @@ function useCopied() {
   return { copied, copy };
 }
 
+async function fetchImageBlob(url: string): Promise<Blob | null> {
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
+    if (!response.ok) return null;
+    return response.blob();
+  } catch {
+    return null;
+  }
+}
+
+function isLocalUrl(url: string): boolean {
+  return url.startsWith("blob:") || url.startsWith("/uploads/");
+}
+
 export function ResultView({ initialJob }: ResultViewProps) {
   const [job, setJob] = useState<GenerationJob>(initialJob);
   const [previewImage, setPreviewImage] = useState<GeneratedImage | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [storedImages, setStoredImages] = useState<Record<string, StoredImage>>({});
   const { copied, copy } = useCopied();
 
-  useEffect(() => {
-    const unsubscribe = subscribeJobProgress(initialJob.id, {
-      onProgress: (progress) =>
-        setJob((current) => ({ ...current, progress })),
-      onStatusChange: (status) =>
-        setJob((current) => ({ ...current, status: status as GenerationJob["status"] })),
-      onResult: (result) =>
-        setJob((current) => ({
-          ...current,
-          results: current.results.map((item) =>
-            item.id === result.id ? result : item,
-          ),
-        })),
-      onComplete: (completedJob) => setJob(completedJob),
-      onError: (error) => {
-        toast.error("生成失败", error);
-        setJob((current) => ({ ...current, status: "failed", error }));
-      },
+  const persistImage = useCallback(async (image: GeneratedImage) => {
+    if (!image.url || storedImages[image.id]?.blob) return;
+
+    const blob = isLocalUrl(image.url) ? null : await fetchImageBlob(image.url);
+    if (!blob) {
+      setStoredImages((current) => ({
+        ...current,
+        [image.id]: { ...image, jobId: job.id },
+      }));
+      return;
+    }
+
+    const stored = await saveImage(job.id, image.id, blob, {
+      url: image.url,
+      width: image.width,
+      height: image.height,
+      status: image.status,
     });
 
-    return () => unsubscribe();
-  }, [initialJob.id]);
+    setStoredImages((current) => ({
+      ...current,
+      [image.id]: stored,
+    }));
+  }, [job.id, storedImages]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadStoredData() {
+      try {
+        const [storedJob, images] = await Promise.all([
+          getJobFromDB(initialJob.id),
+          getImagesByJobId(initialJob.id),
+        ]);
+
+        if (!mounted) return;
+
+        if (storedJob) {
+          setJob(storedJob);
+        } else {
+          await saveJob(initialJob);
+        }
+
+        const imagesMap = images.reduce<Record<string, StoredImage>>((acc, image) => {
+          acc[image.id] = image;
+          return acc;
+        }, {});
+        setStoredImages(imagesMap);
+      } catch {
+        // 本地存储加载失败不影响主流程
+      }
+    }
+
+    void loadStoredData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [initialJob]);
+
+  useEffect(() => {
+    async function persistResults() {
+      await saveJob(job);
+      job.results.forEach((result) => {
+        if (result.url) void persistImage(result);
+      });
+    }
+
+    void persistResults();
+  }, [job, persistImage]);
 
   const handleRetry = async () => {
     try {
       const refreshed = await getJob(job.id);
       setJob(refreshed);
+      await saveJob(refreshed);
     } catch {
       toast.error("刷新任务失败");
     }
@@ -90,9 +155,11 @@ export function ResultView({ initialJob }: ResultViewProps) {
 
   const handleDownloadAll = () => {
     job.results.forEach((result, index) => {
-      if (!result.url) return;
+      const stored = storedImages[result.id];
+      const url = stored?.objectUrl || result.url;
+      if (!url) return;
       const link = document.createElement("a");
-      link.href = result.url;
+      link.href = url;
       link.download = `dreamweave-${job.id}-${index + 1}.png`;
       document.body.appendChild(link);
       link.click();
@@ -102,6 +169,14 @@ export function ResultView({ initialJob }: ResultViewProps) {
 
   const isImageToImage = job.type === "image-to-image" && Boolean(job.inputImage);
 
+  const resultsWithStoredUrls = job.results.map((result) => {
+    const stored = storedImages[result.id];
+    if (stored?.objectUrl) {
+      return { ...result, url: stored.objectUrl };
+    }
+    return result;
+  });
+
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 px-4 pb-20 md:px-6 lg:px-8">
       <Card className="sticky top-20 z-30">
@@ -109,7 +184,7 @@ export function ResultView({ initialJob }: ResultViewProps) {
           <div className="flex-1">
             <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
               {job.status === "processing" && (
-                <Spinner size="sm" className="text-primary" />
+                <GenerationLoader size="sm" label="" />
               )}
               <span>
                 {job.status === "pending" && "等待生成..."}
@@ -168,7 +243,7 @@ export function ResultView({ initialJob }: ResultViewProps) {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {job.results.map((result) => (
+        {resultsWithStoredUrls.map((result) => (
           <ImageResultCard
             key={result.id}
             image={result}
