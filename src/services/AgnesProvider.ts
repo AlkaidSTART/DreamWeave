@@ -16,7 +16,6 @@ interface AgnesRequestBody {
   size: string;
   ratio?: string;
   return_base64?: boolean;
-  image?: string[];
   extra_body: {
     response_format?: "url" | "b64_json";
     image?: string[];
@@ -50,21 +49,26 @@ export class AgnesProvider implements ImageGenerationProvider {
     const model = request.model ?? getEnv("AGNES_MODEL") ?? "agnes-image-2.1-flash";
     const size = request.size ?? getEnv("AGNES_SIZE") ?? "2K";
     const ratio = request.ratio ?? getEnv("AGNES_RATIO") ?? "1:1";
-    const responseFormat = request.responseFormat ??
-      (getEnv("AGNES_RESPONSE_FORMAT") as "url" | "b64_json" | undefined) ??
-      "b64_json";
-    const returnBase64 = request.returnBase64 ?? responseFormat === "b64_json";
-
     const isImageToImage = request.type === "image-to-image";
+    const isSingleImage = request.imageCount === 1;
+
+    const responseFormatFromBase64 =
+      request.returnBase64 === true ? "b64_json" :
+      request.returnBase64 === false ? "url" :
+      undefined;
+    const responseFormat =
+      request.responseFormat ??
+      responseFormatFromBase64 ??
+      (getEnv("AGNES_RESPONSE_FORMAT") as "url" | "b64_json" | undefined) ??
+      (isSingleImage ? "b64_json" : "url");
+    const useBase64 = responseFormat === "b64_json";
 
     const body: AgnesRequestBody = {
       model,
       prompt: request.prompt,
       size,
       ratio,
-      extra_body: {
-        response_format: responseFormat,
-      },
+      extra_body: {},
     };
 
     if (isImageToImage) {
@@ -78,8 +82,12 @@ export class AgnesProvider implements ImageGenerationProvider {
       body.extra_body.image = [inputImage];
     }
 
-    if (returnBase64 && !isImageToImage) {
+    if (isImageToImage) {
+      body.extra_body.response_format = responseFormat;
+    } else if (useBase64) {
       body.return_base64 = true;
+    } else {
+      body.extra_body.response_format = responseFormat;
     }
 
     try {

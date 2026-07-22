@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
 import { PageEntrance } from "@/components/page-entrance";
@@ -10,8 +11,10 @@ import type { CreateGenerationRequest } from "@/lib/types";
 
 export default function TextToImagePage() {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (request: CreateGenerationRequest) => {
+    setIsSubmitting(true);
     try {
       const job = await createGeneration(request);
       toast.success("生成完成", "正在跳转到结果页...");
@@ -21,6 +24,8 @@ export default function TextToImagePage() {
         "提交失败",
         error instanceof Error ? error.message : "请稍后重试",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -33,7 +38,7 @@ export default function TextToImagePage() {
         className="pb-20"
       >
         <div className="mx-auto max-w-3xl px-4 pt-6 md:px-6 lg:px-8">
-          <GenerationForm type="text-to-image" onSubmit={handleSubmit} />
+          <GenerationForm type="text-to-image" onSubmit={handleSubmit} isLoading={isSubmitting} />
         </div>
       </PageShell>
     </PageEntrance>

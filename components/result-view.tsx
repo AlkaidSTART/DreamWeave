@@ -6,8 +6,8 @@ import { Download, RefreshCw, Copy, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Spinner } from "@/components/ui/spinner";
 import { ImageResultCard } from "@/components/image-result-card";
+import { GenerationLoader } from "@/components/generation-loader";
 import { getJob } from "@/lib/api";
 import { getJobFromDB, getImagesByJobId, saveJob, saveImage } from "@/lib/db";
 import { toast } from "@/stores/toast-store";
@@ -184,7 +184,7 @@ export function ResultView({ initialJob }: ResultViewProps) {
           <div className="flex-1">
             <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
               {job.status === "processing" && (
-                <Spinner size="sm" className="text-primary" />
+                <GenerationLoader size="sm" label="" />
               )}
               <span>
                 {job.status === "pending" && "等待生成..."}

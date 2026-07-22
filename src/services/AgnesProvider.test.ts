@@ -6,13 +6,13 @@ import type { CreateGenerationRequest, GenerationJob } from "@/lib/types";
 describe("AgnesProvider", () => {
   const originalEnv = { ...process.env };
 
-  const request: CreateGenerationRequest = {
+  const baseRequest: CreateGenerationRequest = {
     type: "text-to-image",
     prompt: "a cinematic cat",
     imageCount: 1,
   };
 
-  const job: GenerationJob = {
+  const baseJob: GenerationJob = {
     id: "job-1",
     type: "text-to-image",
     status: "processing",
@@ -31,7 +31,7 @@ describe("AgnesProvider", () => {
     process.env.AGNES_MODEL = "agnes-image-2.1-flash";
     process.env.AGNES_SIZE = "2K";
     process.env.AGNES_RATIO = "16:9";
-    process.env.AGNES_RESPONSE_FORMAT = "url";
+    delete process.env.AGNES_RESPONSE_FORMAT;
   });
 
   afterEach(() => {
@@ -39,8 +39,34 @@ describe("AgnesProvider", () => {
     vi.restoreAllMocks();
   });
 
-  it("should generate image from URL response", async () => {
-    process.env.AGNES_RESPONSE_FORMAT = "url";
+  it("should use return_base64 for single text-to-image request", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        created: 1780000000,
+        data: [{ url: null, b64_json: "base64data", revised_prompt: null }],
+      }),
+    });
+
+    const provider = new AgnesProvider();
+    const image = await provider.generate(baseRequest, baseJob, 0);
+
+    expect(image.url).toBe("data:image/png;base64,base64data");
+    expect(image.status).toBe("completed");
+
+    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    const body = JSON.parse(options.body as string);
+    expect(body.return_base64).toBe(true);
+    expect(body.extra_body.response_format).toBeUndefined();
+  });
+
+  it("should use response_format url for multiple text-to-image requests", async () => {
+    const request: CreateGenerationRequest = { ...baseRequest, imageCount: 2 };
+    const job: GenerationJob = { ...baseJob, imageCount: 2 };
+
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -53,21 +79,24 @@ describe("AgnesProvider", () => {
     const image = await provider.generate(request, job, 0);
 
     expect(image.url).toBe("https://example.com/image.png");
-    expect(image.status).toBe("completed");
-    expect(global.fetch).toHaveBeenCalledWith(
-      "https://apihub.agnes-ai.com/v1/images/generations",
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-key",
-          "Content-Type": "application/json",
-        }),
-      }),
-    );
+
+    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    const body = JSON.parse(options.body as string);
+    expect(body.extra_body.response_format).toBe("url");
+    expect(body.return_base64).toBeUndefined();
   });
 
-  it("should generate image from base64 response", async () => {
-    process.env.AGNES_RESPONSE_FORMAT = "b64_json";
+  it("should use response_format b64_json for single image-to-image request", async () => {
+    const request: CreateGenerationRequest = {
+      ...baseRequest,
+      type: "image-to-image",
+      inputImage: "https://example.com/input.png",
+    };
+    const job: GenerationJob = { ...baseJob, type: "image-to-image" };
+
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -80,15 +109,30 @@ describe("AgnesProvider", () => {
     const image = await provider.generate(request, job, 0);
 
     expect(image.url).toBe("data:image/png;base64,base64data");
-    expect(image.status).toBe("completed");
+
+    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    const body = JSON.parse(options.body as string);
+    expect(body.extra_body.response_format).toBe("b64_json");
+    expect(body.extra_body.image).toEqual(["https://example.com/input.png"]);
+    expect(body.return_base64).toBeUndefined();
   });
 
-  it("should support image-to-image with inputImage", async () => {
-    const imageToImageRequest: CreateGenerationRequest = {
-      ...request,
+  it("should use response_format url for multiple image-to-image requests", async () => {
+    const request: CreateGenerationRequest = {
+      ...baseRequest,
       type: "image-to-image",
+      imageCount: 2,
       inputImage: "data:image/png;base64,xxx",
     };
+    const job: GenerationJob = {
+      ...baseJob,
+      type: "image-to-image",
+      imageCount: 2,
+    };
+
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -98,27 +142,88 @@ describe("AgnesProvider", () => {
     });
 
     const provider = new AgnesProvider();
-    const image = await provider.generate(imageToImageRequest, job, 0);
+    const image = await provider.generate(request, job, 0);
 
     expect(image.url).toBe("https://example.com/edited.png");
-    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+
+    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
     const body = JSON.parse(options.body as string);
+    expect(body.extra_body.response_format).toBe("url");
     expect(body.extra_body.image).toEqual(["data:image/png;base64,xxx"]);
+  });
+
+  it("should allow explicit returnBase64 override", async () => {
+    const request: CreateGenerationRequest = {
+      ...baseRequest,
+      imageCount: 2,
+      returnBase64: true,
+    };
+    const job: GenerationJob = { ...baseJob, imageCount: 2 };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        created: 1780000000,
+        data: [{ url: null, b64_json: "base64data", revised_prompt: null }],
+      }),
+    });
+
+    const provider = new AgnesProvider();
+    await provider.generate(request, job, 0);
+
+    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    const body = JSON.parse(options.body as string);
+    expect(body.return_base64).toBe(true);
+  });
+
+  it("should allow explicit responseFormat override", async () => {
+    const request: CreateGenerationRequest = {
+      ...baseRequest,
+      imageCount: 1,
+      responseFormat: "url",
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        created: 1780000000,
+        data: [{ url: "https://example.com/image.png", b64_json: null, revised_prompt: null }],
+      }),
+    });
+
+    const provider = new AgnesProvider();
+    const image = await provider.generate(request, baseJob, 0);
+
+    expect(image.url).toBe("https://example.com/image.png");
+
+    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    const body = JSON.parse(options.body as string);
+    expect(body.extra_body.response_format).toBe("url");
+    expect(body.return_base64).toBeUndefined();
   });
 
   it("should throw when API key is missing", async () => {
     delete process.env.IMAGE_GENERATION_API_KEY;
     const provider = new AgnesProvider();
-    await expect(provider.generate(request, job, 0)).rejects.toThrow(ImageGenerationError);
+    await expect(provider.generate(baseRequest, baseJob, 0)).rejects.toThrow(ImageGenerationError);
   });
 
   it("should throw when image-to-image lacks inputImage", async () => {
     const imageToImageRequest: CreateGenerationRequest = {
-      ...request,
+      ...baseRequest,
       type: "image-to-image",
     };
     const provider = new AgnesProvider();
-    await expect(provider.generate(imageToImageRequest, job, 0)).rejects.toThrow(
+    await expect(provider.generate(imageToImageRequest, baseJob, 0)).rejects.toThrow(
       "图生图模式必须提供 inputImage",
     );
   });
@@ -131,6 +236,6 @@ describe("AgnesProvider", () => {
     });
 
     const provider = new AgnesProvider();
-    await expect(provider.generate(request, job, 0)).rejects.toThrow(ImageGenerationError);
+    await expect(provider.generate(baseRequest, baseJob, 0)).rejects.toThrow(ImageGenerationError);
   });
 });

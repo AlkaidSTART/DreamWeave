@@ -5,8 +5,8 @@ import { Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PromptInput } from "@/components/ui/prompt-input";
-import { Spinner } from "@/components/ui/spinner";
 import { CountSelector } from "@/components/count-selector";
+import { GenerationLoader } from "@/components/generation-loader";
 import { SkillCard } from "@/components/skill-card";
 import { UploadZone } from "@/components/upload-zone";
 import { fetchSkills } from "@/lib/api";
@@ -71,7 +71,7 @@ export function GenerationForm({
   };
 
   return (
-    <div className={cn("mx-auto w-full max-w-3xl space-y-6", className)}>
+    <div className={cn("relative mx-auto w-full max-w-3xl space-y-6", className)}>
       {type === "image-to-image" && onInputImageChange && (
         <UploadZone value={inputImage} onChange={onInputImageChange} />
       )}
@@ -97,7 +97,7 @@ export function GenerationForm({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-foreground">风格模板</span>
-          {skillsLoading && <Spinner size="sm" className="text-primary" />}
+          {skillsLoading && <GenerationLoader size="sm" label="" />}
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {skills.map((skill) => (
@@ -127,6 +127,12 @@ export function GenerationForm({
           开始生成
         </Button>
       </div>
+
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl glass-strong">
+          <GenerationLoader size="lg" label="正在创作中..." />
+        </div>
+      )}
     </div>
   );
 }

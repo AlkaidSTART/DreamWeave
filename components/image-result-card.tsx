@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Download, Maximize2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { GenerationLoader } from "@/components/generation-loader";
 import type { GeneratedImage } from "@/lib/types";
 
 interface ImageResultCardProps {
@@ -34,9 +34,8 @@ export function ImageResultCard({
             <span className="text-sm">生成失败</span>
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
-            <Spinner className="text-primary" />
-            <span className="text-sm">生成中...</span>
+          <div className="flex h-full w-full flex-col items-center justify-center">
+            <GenerationLoader size="md" label="生成中..." />
           </div>
         )}
       </div>
