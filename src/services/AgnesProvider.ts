@@ -14,9 +14,8 @@ interface AgnesRequestBody {
   model: string;
   prompt: string;
   size: string;
-  ratio?: string;
   return_base64?: boolean;
-  extra_body: {
+  extra_body?: {
     response_format?: "url" | "b64_json";
     image?: string[];
   };
@@ -37,6 +36,20 @@ function requireEnv(key: string): string {
   return value;
 }
 
+function resolveResponseFormat(request: CreateGenerationRequest): "url" | "b64_json" {
+  const responseFormatFromBase64 =
+    request.returnBase64 === true ? "b64_json" :
+    request.returnBase64 === false ? "url" :
+    undefined;
+
+  return (
+    request.responseFormat ??
+    responseFormatFromBase64 ??
+    (getEnv("AGNES_RESPONSE_FORMAT") as "url" | "b64_json" | undefined) ??
+    (request.imageCount === 1 ? "b64_json" : "url")
+  );
+}
+
 export class AgnesProvider implements ImageGenerationProvider {
   async generate(
     request: CreateGenerationRequest,
@@ -47,28 +60,14 @@ export class AgnesProvider implements ImageGenerationProvider {
     const apiKey = requireEnv("IMAGE_GENERATION_API_KEY");
 
     const model = request.model ?? getEnv("AGNES_MODEL") ?? "agnes-image-2.1-flash";
-    const size = request.size ?? getEnv("AGNES_SIZE") ?? "2K";
-    const ratio = request.ratio ?? getEnv("AGNES_RATIO") ?? "1:1";
+    const size = request.size ?? getEnv("AGNES_SIZE") ?? "1024x768";
     const isImageToImage = request.type === "image-to-image";
-    const isSingleImage = request.imageCount === 1;
 
-    const responseFormatFromBase64 =
-      request.returnBase64 === true ? "b64_json" :
-      request.returnBase64 === false ? "url" :
-      undefined;
-    const responseFormat =
-      request.responseFormat ??
-      responseFormatFromBase64 ??
-      (getEnv("AGNES_RESPONSE_FORMAT") as "url" | "b64_json" | undefined) ??
-      (isSingleImage ? "b64_json" : "url");
-    const useBase64 = responseFormat === "b64_json";
-
+    const responseFormat = resolveResponseFormat(request);
     const body: AgnesRequestBody = {
       model,
       prompt: request.prompt,
       size,
-      ratio,
-      extra_body: {},
     };
 
     if (isImageToImage) {
@@ -79,15 +78,18 @@ export class AgnesProvider implements ImageGenerationProvider {
           "AGNES_MISSING_INPUT_IMAGE",
         );
       }
-      body.extra_body.image = [inputImage];
-    }
-
-    if (isImageToImage) {
-      body.extra_body.response_format = responseFormat;
-    } else if (useBase64) {
+      body.extra_body = {
+        response_format: responseFormat,
+        image: [inputImage],
+      };
+    } else if (responseFormat === "b64_json") {
+      // 文本生图单张走 base64：接口样例使用 return_base64: true
       body.return_base64 = true;
     } else {
-      body.extra_body.response_format = responseFormat;
+      // 文本生图多张走 url
+      body.extra_body = {
+        response_format: responseFormat,
+      };
     }
 
     try {
@@ -141,10 +143,13 @@ export class AgnesProvider implements ImageGenerationProvider {
       );
     } catch (error) {
       if (error instanceof ImageGenerationError) throw error;
-      throw new ImageGenerationError(
-        error instanceof Error ? error.message : "调用 Agnes API 失败",
-        "AGNES_NETWORK_ERROR",
-      );
+
+      let message = "调用 Agnes API 失败";
+      if (error instanceof Error) {
+        const cause = (error as Error & { cause?: Error }).cause;
+        message = cause ? `${error.message}: ${cause.message}` : error.message;
+      }
+      throw new ImageGenerationError(message, "AGNES_NETWORK_ERROR");
     }
   }
 }

@@ -29,8 +29,7 @@ describe("AgnesProvider", () => {
     process.env.IMAGE_GENERATION_API_KEY = "test-key";
     process.env.IMAGE_GENERATION_API_URL = "https://apihub.agnes-ai.com/v1/images/generations";
     process.env.AGNES_MODEL = "agnes-image-2.1-flash";
-    process.env.AGNES_SIZE = "2K";
-    process.env.AGNES_RATIO = "16:9";
+    process.env.AGNES_SIZE = "1024x768";
     delete process.env.AGNES_RESPONSE_FORMAT;
   });
 
@@ -60,10 +59,10 @@ describe("AgnesProvider", () => {
     ];
     const body = JSON.parse(options.body as string);
     expect(body.return_base64).toBe(true);
-    expect(body.extra_body.response_format).toBeUndefined();
+    expect(body.extra_body).toBeUndefined();
   });
 
-  it("should use response_format url for multiple text-to-image requests", async () => {
+  it("should use extra_body.response_format url for multiple text-to-image requests", async () => {
     const request: CreateGenerationRequest = { ...baseRequest, imageCount: 2 };
     const job: GenerationJob = { ...baseJob, imageCount: 2 };
 
@@ -89,7 +88,7 @@ describe("AgnesProvider", () => {
     expect(body.return_base64).toBeUndefined();
   });
 
-  it("should use response_format b64_json for single image-to-image request", async () => {
+  it("should use extra_body.response_format b64_json for single image-to-image request", async () => {
     const request: CreateGenerationRequest = {
       ...baseRequest,
       type: "image-to-image",
@@ -120,7 +119,7 @@ describe("AgnesProvider", () => {
     expect(body.return_base64).toBeUndefined();
   });
 
-  it("should use response_format url for multiple image-to-image requests", async () => {
+  it("should use extra_body.response_format url for multiple image-to-image requests", async () => {
     const request: CreateGenerationRequest = {
       ...baseRequest,
       type: "image-to-image",
@@ -155,34 +154,34 @@ describe("AgnesProvider", () => {
     expect(body.extra_body.image).toEqual(["data:image/png;base64,xxx"]);
   });
 
-  it("should allow explicit returnBase64 override", async () => {
+  it("should allow explicit returnBase64 override to url", async () => {
     const request: CreateGenerationRequest = {
       ...baseRequest,
-      imageCount: 2,
-      returnBase64: true,
+      imageCount: 1,
+      returnBase64: false,
     };
-    const job: GenerationJob = { ...baseJob, imageCount: 2 };
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         created: 1780000000,
-        data: [{ url: null, b64_json: "base64data", revised_prompt: null }],
+        data: [{ url: "https://example.com/image.png", b64_json: null, revised_prompt: null }],
       }),
     });
 
     const provider = new AgnesProvider();
-    await provider.generate(request, job, 0);
+    await provider.generate(request, baseJob, 0);
 
     const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
       string,
       RequestInit,
     ];
     const body = JSON.parse(options.body as string);
-    expect(body.return_base64).toBe(true);
+    expect(body.extra_body.response_format).toBe("url");
+    expect(body.return_base64).toBeUndefined();
   });
 
-  it("should allow explicit responseFormat override", async () => {
+  it("should allow explicit responseFormat override to url for single text-to-image", async () => {
     const request: CreateGenerationRequest = {
       ...baseRequest,
       imageCount: 1,
@@ -237,5 +236,17 @@ describe("AgnesProvider", () => {
 
     const provider = new AgnesProvider();
     await expect(provider.generate(baseRequest, baseJob, 0)).rejects.toThrow(ImageGenerationError);
+  });
+
+  it("should include fetch cause in network error message", async () => {
+    const underlyingError = new Error("connect ETIMEDOUT");
+    const fetchError = new Error("fetch failed") as Error & { cause: Error };
+    fetchError.cause = underlyingError;
+    global.fetch = vi.fn().mockRejectedValue(fetchError);
+
+    const provider = new AgnesProvider();
+    await expect(provider.generate(baseRequest, baseJob, 0)).rejects.toThrow(
+      "fetch failed: connect ETIMEDOUT",
+    );
   });
 });
