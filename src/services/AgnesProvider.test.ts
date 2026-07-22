@@ -40,6 +40,7 @@ describe("AgnesProvider", () => {
   });
 
   it("should generate image from URL response", async () => {
+    process.env.AGNES_RESPONSE_FORMAT = "url";
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({

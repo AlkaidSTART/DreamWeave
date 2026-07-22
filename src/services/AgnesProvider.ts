@@ -52,7 +52,7 @@ export class AgnesProvider implements ImageGenerationProvider {
     const ratio = request.ratio ?? getEnv("AGNES_RATIO") ?? "1:1";
     const responseFormat = request.responseFormat ??
       (getEnv("AGNES_RESPONSE_FORMAT") as "url" | "b64_json" | undefined) ??
-      "url";
+      "b64_json";
     const returnBase64 = request.returnBase64 ?? responseFormat === "b64_json";
 
     const isImageToImage = request.type === "image-to-image";
