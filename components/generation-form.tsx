@@ -9,8 +9,7 @@ import { CountSelector } from "@/components/count-selector";
 import { GenerationLoader } from "@/components/generation-loader";
 import { SkillCard } from "@/components/skill-card";
 import { UploadZone } from "@/components/upload-zone";
-import { RatioSelector } from "@/components/ratio-selector";
-import { QualitySelector } from "@/components/quality-selector";
+import { ImageConfigBar } from "@/components/image-config-bar";
 import { fetchSkills } from "@/lib/api";
 import { toast } from "@/stores/toast-store";
 import { DEFAULT_QUALITY, DEFAULT_RATIO } from "@/lib/image-config";
@@ -85,7 +84,7 @@ export function GenerationForm({
         <UploadZone value={inputImage} onChange={onInputImageChange} />
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <label htmlFor="prompt" className="text-sm font-medium text-foreground">
           {type === "text-to-image" ? "描述你想要的画面" : "补充描述（可选）"}
         </label>
@@ -101,11 +100,12 @@ export function GenerationForm({
           }
           maxLength={1000}
         />
-      </div>
-
-      <div className="grid gap-6 rounded-2xl border border-border bg-card/40 p-4 backdrop-blur-sm sm:p-5">
-        <RatioSelector value={ratio} onChange={setRatio} />
-        <QualitySelector value={quality} onChange={setQuality} />
+        <ImageConfigBar
+          ratio={ratio}
+          quality={quality}
+          onRatioChange={setRatio}
+          onQualityChange={setQuality}
+        />
       </div>
 
       <div className="space-y-3">
