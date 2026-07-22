@@ -144,7 +144,11 @@ export function GenerationForm({
 
       {isLoading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl glass-strong">
-          <GenerationLoader size="lg" label="正在创作中..." />
+          <GenerationLoader
+            size="lg"
+            phases={["正在构思画面", "正在生成图像", "正在润色细节", "即将完成"]}
+            showProgress
+          />
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,8 @@ interface GenerationLoaderProps {
   className?: string;
   label?: string;
   size?: "sm" | "md" | "lg";
+  phases?: string[];
+  showProgress?: boolean;
 }
 
 const sizeStyles = {
@@ -24,7 +26,7 @@ const sizeStyles = {
     text: "text-sm",
   },
   lg: {
-    container: "w-60 h-60",
+    container: "w-64 h-64",
     text: "text-base",
   },
 };
@@ -32,19 +34,60 @@ const sizeStyles = {
 const outerParticles = [0, 72, 144, 216, 288];
 const middleParticles = [36, 108, 180, 252];
 
+const PROGRESS_RADIUS = 58;
+const PROGRESS_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_RADIUS;
+const PHASE_INTERVAL_MS = 2800;
+const PROGRESS_INTERVAL_MS = 200;
+
 export function GenerationLoader({
   className,
   label = "生成中",
   size = "md",
+  phases,
+  showProgress = false,
 }: GenerationLoaderProps) {
+  const hasPhases = phases && phases.length > 0;
+  const [phaseIndex, setPhaseIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const coreRef = useRef<HTMLDivElement>(null);
   const ring1Ref = useRef<SVGGElement>(null);
   const ring2Ref = useRef<SVGGElement>(null);
   const ring3Ref = useRef<SVGGElement>(null);
+  const progressRef = useRef<SVGCircleElement>(null);
   const shimmerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
+  const dotsRef = useRef<HTMLSpanElement>(null);
+
+  const currentPhase = hasPhases ? phases[phaseIndex] : label;
+
+  useEffect(() => {
+    if (!hasPhases && !showProgress) return;
+
+    const phaseTimer = hasPhases
+      ? setInterval(() => {
+          setPhaseIndex((index) => (index + 1) % phases.length);
+        }, PHASE_INTERVAL_MS)
+      : null;
+
+    const progressTimer = showProgress
+      ? setInterval(() => {
+          setProgress((value) => {
+            if (value >= 95) return value;
+            const remaining = 100 - value;
+            const step = Math.max(0.25, remaining * 0.035);
+            return Math.min(95, value + step);
+          });
+        }, PROGRESS_INTERVAL_MS)
+      : null;
+
+    return () => {
+      if (phaseTimer) clearInterval(phaseTimer);
+      if (progressTimer) clearInterval(progressTimer);
+    };
+  }, [hasPhases, showProgress, phases]);
 
   useGSAP(
     () => {
@@ -108,14 +151,18 @@ export function GenerationLoader({
           },
         );
 
-        gsap.to(textRef.current, {
-          opacity: 0.4,
-          y: 4,
-          duration: 1.6,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        });
+        if (dotsRef.current) {
+          const dots = dotsRef.current.querySelectorAll("span");
+          gsap.to(dots, {
+            opacity: 0.25,
+            y: -2,
+            duration: 0.5,
+            stagger: 0.12,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+          });
+        }
       }, containerRef.current);
 
       return () => ctx.revert();
@@ -123,7 +170,49 @@ export function GenerationLoader({
     { scope: containerRef },
   );
 
+  useGSAP(
+    () => {
+      if (!textRef.current || prefersReducedMotion()) return;
+
+      gsap.fromTo(
+        textRef.current,
+        { opacity: 0, y: 10, filter: "blur(4px)" },
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: 0.45,
+          ease: "power2.out",
+        },
+      );
+    },
+    {
+      scope: containerRef,
+      dependencies: [currentPhase],
+      revertOnUpdate: true,
+    },
+  );
+
+  useGSAP(
+    () => {
+      if (!progressRef.current || prefersReducedMotion()) return;
+
+      const offset = PROGRESS_CIRCUMFERENCE - (progress / 100) * PROGRESS_CIRCUMFERENCE;
+      gsap.to(progressRef.current, {
+        strokeDashoffset: offset,
+        duration: 0.3,
+        ease: "power2.out",
+      });
+    },
+    {
+      scope: containerRef,
+      dependencies: [progress],
+      revertOnUpdate: true,
+    },
+  );
+
   const styles = sizeStyles[size];
+  const showMeta = hasPhases || showProgress;
 
   return (
     <div
@@ -131,7 +220,7 @@ export function GenerationLoader({
       className={cn("flex flex-col items-center justify-center gap-5", className)}
       role="status"
       aria-live="polite"
-      aria-label={label}
+      aria-label={currentPhase}
     >
       <div className={cn("relative flex items-center justify-center", styles.container)}>
         <div
@@ -201,6 +290,23 @@ export function GenerationLoader({
               strokeWidth="1"
             />
           </g>
+
+          {showProgress && (
+            <circle
+              ref={progressRef}
+              cx="100"
+              cy="100"
+              r={PROGRESS_RADIUS}
+              fill="none"
+              stroke="rgba(99,102,241,0.55)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={PROGRESS_CIRCUMFERENCE}
+              strokeDashoffset={PROGRESS_CIRCUMFERENCE}
+              className="will-change-transform"
+              transform="rotate(-90 100 100)"
+            />
+          )}
         </svg>
 
         <div
@@ -217,14 +323,28 @@ export function GenerationLoader({
         />
       </div>
 
-      {label && (
-        <span
-          ref={textRef}
-          className={cn("font-medium text-muted-foreground will-change-transform", styles.text)}
-        >
-          {label}
-        </span>
-      )}
+      <div className="flex flex-col items-center gap-1.5">
+        {(currentPhase || showMeta) && (
+          <span
+            ref={textRef}
+            className={cn("inline-flex items-center font-medium text-foreground will-change-transform", styles.text)}
+          >
+            {currentPhase}
+            {hasPhases && (
+              <span ref={dotsRef} className="ml-0.5 inline-flex">
+                <span className="will-change-transform">.</span>
+                <span className="will-change-transform">.</span>
+                <span className="will-change-transform">.</span>
+              </span>
+            )}
+          </span>
+        )}
+        {showProgress && (
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {Math.round(progress)}%
+          </span>
+        )}
+      </div>
     </div>
   );
 }
