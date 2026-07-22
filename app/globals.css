@@ -83,35 +83,37 @@
 }
 
 .dark {
-  --background: #050508;
-  --foreground: #f4f4f5;
-  --card: rgba(24, 24, 27, 0.6);
-  --card-elevated: rgba(39, 39, 42, 0.72);
-  --muted: #a1a1aa;
-  --muted-foreground: #6b6b78;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-accent: rgba(99, 102, 241, 0.45);
+  --background: #12141a;
+  --background-deep: #0c0e13;
+  --foreground: #f1f5f9;
+  --card: rgba(30, 34, 45, 0.62);
+  --card-elevated: rgba(38, 43, 56, 0.78);
+  --muted: #94a3b8;
+  --muted-foreground: #64748b;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-accent: rgba(129, 140, 248, 0.4);
 
-  --primary: #818cf8;
-  --primary-hover: #6366f1;
-  --primary-active: #4f46e5;
+  --primary: #8b9af7;
+  --primary-hover: #717ff5;
+  --primary-active: #5e6bf2;
 
-  --glass-white: rgba(255, 255, 255, 0.08);
-  --glass-white-strong: rgba(255, 255, 255, 0.12);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
+  --glass-white: rgba(255, 255, 255, 0.06);
+  --glass-white-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.11);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.36);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.24);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.28);
-  --shadow-xl: 0 24px 56px rgba(0, 0, 0, 0.32);
-  --shadow-glow: 0 0 24px rgba(99, 102, 241, 0.12);
-  --shadow-inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.32);
+  --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.38);
+  --shadow-glow: 0 0 28px rgba(129, 140, 248, 0.14);
+  --shadow-inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.09);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-deep: var(--background-deep);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-elevated: var(--card-elevated);
@@ -317,11 +319,11 @@
 
   .dark .home-liquid-bg::before {
     background:
-      radial-gradient(ellipse at 15% 8%, rgba(99, 102, 241, 0.13) 0%, transparent 45%),
-      radial-gradient(ellipse at 85% 18%, rgba(20, 184, 166, 0.10) 0%, transparent 40%),
-      radial-gradient(ellipse at 50% 52%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at 25% 88%, rgba(20, 184, 166, 0.08) 0%, transparent 40%),
-      radial-gradient(ellipse at 80% 82%, rgba(99, 102, 241, 0.08) 0%, transparent 45%);
+      radial-gradient(ellipse at 15% 8%, rgba(139, 154, 247, 0.10) 0%, transparent 48%),
+      radial-gradient(ellipse at 85% 18%, rgba(45, 212, 191, 0.08) 0%, transparent 42%),
+      radial-gradient(ellipse at 50% 52%, rgba(139, 154, 247, 0.06) 0%, transparent 52%),
+      radial-gradient(ellipse at 25% 88%, rgba(45, 212, 191, 0.06) 0%, transparent 42%),
+      radial-gradient(ellipse at 80% 82%, rgba(139, 154, 247, 0.07) 0%, transparent 48%);
   }
 }
 

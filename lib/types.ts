@@ -1,5 +1,17 @@
 export type GenerationType = "text-to-image" | "image-to-image";
 
+export type ImageRatio =
+  | "1:1"
+  | "3:4"
+  | "4:3"
+  | "16:9"
+  | "9:16"
+  | "2:3"
+  | "3:2"
+  | "21:9";
+
+export type ImageQuality = "1K" | "2K" | "3K" | "4K";
+
 export type JobStatus = "pending" | "processing" | "completed" | "failed";
 
 export type ImageStatus = "pending" | "completed" | "failed";
@@ -20,6 +32,8 @@ export interface GenerationJob {
   refinedPrompt: string;
   skillId?: string;
   imageCount: number;
+  ratio?: ImageRatio;
+  quality?: ImageQuality;
   inputImage?: string;
   results: GeneratedImage[];
   progress: number;
@@ -47,7 +61,8 @@ export interface CreateGenerationRequest {
   // Agnes AI 参数，未传时使用环境变量默认值
   model?: string;
   size?: string;
-  ratio?: string;
+  ratio?: ImageRatio;
+  quality?: ImageQuality;
   returnBase64?: boolean;
   responseFormat?: "url" | "b64_json";
 }

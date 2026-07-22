@@ -1,4 +1,5 @@
 import type { CreateGenerationRequest, GenerationJob, GeneratedImage } from "@/lib/types";
+import { resolveImageSize } from "@/lib/image-config";
 import { ImageGenerationError, type ImageGenerationProvider } from "@/src/services/ImageGenerationService";
 
 interface AgnesResponse {
@@ -60,7 +61,11 @@ export class AgnesProvider implements ImageGenerationProvider {
     const apiKey = requireEnv("IMAGE_GENERATION_API_KEY");
 
     const model = request.model ?? getEnv("AGNES_MODEL") ?? "agnes-image-2.1-flash";
-    const size = request.size ?? getEnv("AGNES_SIZE") ?? "1024x768";
+    const size =
+      request.size ??
+      resolveImageSize(request.ratio, request.quality) ??
+      getEnv("AGNES_SIZE") ??
+      "1024x1024";
     const isImageToImage = request.type === "image-to-image";
 
     const responseFormat = resolveResponseFormat(request);

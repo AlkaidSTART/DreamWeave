@@ -249,4 +249,31 @@ describe("AgnesProvider", () => {
       "fetch failed: connect ETIMEDOUT",
     );
   });
+
+  it("should resolve size from ratio and quality", async () => {
+    delete process.env.AGNES_SIZE;
+    const request: CreateGenerationRequest = {
+      ...baseRequest,
+      ratio: "16:9",
+      quality: "2K",
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        created: 1780000000,
+        data: [{ url: null, b64_json: "base64data", revised_prompt: null }],
+      }),
+    });
+
+    const provider = new AgnesProvider();
+    await provider.generate(request, baseJob, 0);
+
+    const [, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    const body = JSON.parse(options.body as string);
+    expect(body.size).toBe("2624x1472");
+  });
 });

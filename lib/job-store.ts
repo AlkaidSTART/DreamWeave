@@ -36,6 +36,8 @@ export async function createJob(request: CreateGenerationRequest): Promise<Gener
     refinedPrompt: request.prompt,
     skillId: request.skillId,
     imageCount: request.imageCount,
+    ratio: request.ratio,
+    quality: request.quality,
     inputImage: request.inputImage ?? undefined,
     results: buildInitialResults(request.imageCount),
     progress: 0,

@@ -9,12 +9,17 @@ import { CountSelector } from "@/components/count-selector";
 import { GenerationLoader } from "@/components/generation-loader";
 import { SkillCard } from "@/components/skill-card";
 import { UploadZone } from "@/components/upload-zone";
+import { RatioSelector } from "@/components/ratio-selector";
+import { QualitySelector } from "@/components/quality-selector";
 import { fetchSkills } from "@/lib/api";
 import { toast } from "@/stores/toast-store";
+import { DEFAULT_QUALITY, DEFAULT_RATIO } from "@/lib/image-config";
 import type {
   CreateGenerationRequest,
   GenerationType,
   Skill,
+  ImageRatio,
+  ImageQuality,
 } from "@/lib/types";
 
 interface GenerationFormProps {
@@ -36,6 +41,8 @@ export function GenerationForm({
 }: GenerationFormProps) {
   const [prompt, setPrompt] = useState("");
   const [imageCount, setImageCount] = useState(1);
+  const [ratio, setRatio] = useState<ImageRatio>(DEFAULT_RATIO);
+  const [quality, setQuality] = useState<ImageQuality>(DEFAULT_QUALITY);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [selectedSkillId, setSelectedSkillId] = useState<string | undefined>();
   const [skillsLoading, setSkillsLoading] = useState(true);
@@ -65,6 +72,8 @@ export function GenerationForm({
       type,
       prompt: prompt.trim(),
       imageCount,
+      ratio,
+      quality,
       skillId: selectedSkillId,
       inputImage: type === "image-to-image" ? inputImage ?? null : null,
     });
@@ -92,6 +101,11 @@ export function GenerationForm({
           }
           maxLength={1000}
         />
+      </div>
+
+      <div className="grid gap-6 rounded-2xl border border-border bg-card/40 p-4 backdrop-blur-sm sm:p-5">
+        <RatioSelector value={ratio} onChange={setRatio} />
+        <QualitySelector value={quality} onChange={setQuality} />
       </div>
 
       <div className="space-y-3">

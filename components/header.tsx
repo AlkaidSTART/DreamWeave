@@ -10,6 +10,7 @@ const navItems = [
   { href: "/", label: "主页" },
   { href: "/text-to-image", label: "文生图" },
   { href: "/image-to-image", label: "图生图" },
+  { href: "/gallery", label: "图库" },
 ];
 
 export function Header() {

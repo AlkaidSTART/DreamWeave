@@ -11,7 +11,8 @@ const createGenerationSchema = z.object({
   inputImage: z.string().nullable().optional(),
   model: z.string().optional(),
   size: z.string().optional(),
-  ratio: z.string().optional(),
+  ratio: z.enum(["1:1", "3:4", "4:3", "16:9", "9:16", "2:3", "3:2", "21:9"]).optional(),
+  quality: z.enum(["1K", "2K", "3K", "4K"]).optional(),
   returnBase64: z.boolean().optional(),
   responseFormat: z.enum(["url", "b64_json"]).optional(),
 });
