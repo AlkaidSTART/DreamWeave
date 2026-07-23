@@ -7,9 +7,9 @@ import { Download, RefreshCw, Copy, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ImageResultCard } from "@/components/image-result-card";
+import { Spinner } from "@/components/ui/spinner";
+import { ResultStack } from "@/components/result-stack";
 import { ImageLightbox } from "@/components/image-lightbox";
-import { GenerationLoader } from "@/components/generation-loader";
 import { getJob } from "@/lib/api";
 import { getJobFromDB, getImagesByJobId, saveJob, saveImage } from "@/lib/db";
 import { toast } from "@/stores/toast-store";
@@ -58,7 +58,6 @@ export function ResultView({ initialJob }: ResultViewProps) {
   const [storedImages, setStoredImages] = useState<Record<string, StoredImage>>({});
   const { copied, copy } = useCopied();
   const statusCardRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
   const prevStatusRef = useRef<string>(initialJob.status);
 
   const persistImage = useCallback(async (image: GeneratedImage) => {
@@ -173,31 +172,6 @@ export function ResultView({ initialJob }: ResultViewProps) {
     }
   }, [job.status]);
 
-  useEffect(() => {
-    if (prefersReducedMotion() || !gridRef.current) return;
-
-    const cards = gridRef.current.querySelectorAll(".result-card");
-    if (cards.length === 0) return;
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        cards,
-        { y: 28, opacity: 0, scale: 0.97 },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 0.55,
-          stagger: 0.08,
-          ease: "power2.out",
-          clearProps: "transform",
-        },
-      );
-    }, gridRef.current);
-
-    return () => ctx.revert();
-  }, [job.results.length]);
-
   const handleRetry = async () => {
     try {
       const refreshed = await getJob(job.id);
@@ -215,10 +189,6 @@ export function ResultView({ initialJob }: ResultViewProps) {
     } else {
       toast.error("复制失败", "请手动复制");
     }
-  };
-
-  const handleRegenerate = (image: GeneratedImage) => {
-    toast.info("重新生成开发中", `图片 ${image.id} 的单张重试将在后续版本支持`);
   };
 
   const completedCount = job.results.filter(
@@ -250,14 +220,12 @@ export function ResultView({ initialJob }: ResultViewProps) {
   });
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 px-4 pb-20 md:px-6 lg:px-8">
-      <Card ref={statusCardRef} className="sticky top-20 z-30 will-change-transform">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto flex h-[calc(100vh-9rem)] w-full max-w-6xl flex-col gap-4 px-4 md:px-6 lg:px-8">
+      <Card ref={statusCardRef} className="shrink-0">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">
-            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-              {job.status === "processing" && (
-                <GenerationLoader size="sm" label="" />
-              )}
+            <div className="mb-1.5 flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
+              {job.status === "processing" && <Spinner size="sm" className="text-primary" />}
               <span>
                 {job.status === "pending" && "等待生成..."}
                 {job.status === "processing" && `正在生成 ${completedCount}/${job.imageCount} 张图片`}
@@ -273,6 +241,16 @@ export function ResultView({ initialJob }: ResultViewProps) {
             <Progress value={job.progress} />
           </div>
           <div className="flex items-center gap-2">
+            {isImageToImage && job.inputImage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<ImageIcon className="h-4 w-4" />}
+                onClick={() => setShowOriginal((prev) => !prev)}
+              >
+                {showOriginal ? "隐藏原图" : "原图"}
+              </Button>
+            )}
             {job.status === "failed" && (
               <Button variant="secondary" leftIcon={<RefreshCw className="h-4 w-4" />} onClick={handleRetry}>
                 重试
@@ -285,75 +263,41 @@ export function ResultView({ initialJob }: ResultViewProps) {
             )}
           </div>
         </div>
+
+        {isImageToImage && showOriginal && job.inputImage && (
+          <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-[10px] bg-card-elevated">
+            <Image
+              src={job.inputImage}
+              alt="参考原图"
+              fill
+              className="object-contain"
+              sizes="(max-width: 1024px) 100vw, 1024px"
+            />
+          </div>
+        )}
       </Card>
 
-      {isImageToImage && (
-        <Card className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">原图对比</h2>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<ImageIcon className="h-4 w-4" />}
-              onClick={() => setShowOriginal((prev) => !prev)}
-            >
-              {showOriginal ? "隐藏原图" : "查看原图"}
-            </Button>
-          </div>
-          {showOriginal && job.inputImage && (
-            <div className="relative aspect-video w-full overflow-hidden rounded-[10px] bg-card-elevated">
-              <Image
-                src={job.inputImage}
-                alt="参考原图"
-                fill
-                className="object-contain"
-                sizes="(max-width: 1024px) 100vw, 1024px"
-              />
-            </div>
-          )}
-        </Card>
-      )}
-
-      <div ref={gridRef} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {resultsWithStoredUrls.map((result) => (
-          <ImageResultCard
-            key={result.id}
-            image={result}
-            onPreview={setPreviewImage}
-            onRegenerate={handleRegenerate}
-          />
-        ))}
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border bg-card/40 p-4 backdrop-blur-md">
+        <ResultStack images={resultsWithStoredUrls} onPreview={setPreviewImage} />
       </div>
 
-      <Card>
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">提示词信息</h2>
+      <Card className="shrink-0">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold text-foreground">提示词</h2>
+            <p className="mt-1 line-clamp-2 text-sm text-foreground">
+              {job.refinedPrompt || job.prompt || "无"}
+            </p>
+          </div>
           <Button
             variant="ghost"
             size="sm"
+            className="shrink-0"
             leftIcon={copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             onClick={() => handleCopyPrompt(job.refinedPrompt || job.prompt, job.refinedPrompt ? "润色提示词" : "原始提示词")}
           >
-            {copied ? "已复制" : "复制提示词"}
+            {copied ? "已复制" : "复制"}
           </Button>
-        </div>
-        <div className="mt-4 space-y-3">
-          <div>
-            <span className="text-xs text-muted-foreground">原始提示词</span>
-            <p className="mt-1 text-sm text-foreground">{job.prompt || "无"}</p>
-          </div>
-          {job.refinedPrompt && job.refinedPrompt !== job.prompt && (
-            <div>
-              <span className="text-xs text-muted-foreground">润色后提示词</span>
-              <p className="mt-1 text-sm text-foreground">{job.refinedPrompt}</p>
-            </div>
-          )}
-          {job.skillId && (
-            <div>
-              <span className="text-xs text-muted-foreground">使用模板</span>
-              <p className="mt-1 text-sm text-foreground">{job.skillId}</p>
-            </div>
-          )}
         </div>
       </Card>
 
