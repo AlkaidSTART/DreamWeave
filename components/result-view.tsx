@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ImageResultCard } from "@/components/image-result-card";
+import { ImageLightbox } from "@/components/image-lightbox";
 import { GenerationLoader } from "@/components/generation-loader";
 import { getJob } from "@/lib/api";
 import { getJobFromDB, getImagesByJobId, saveJob, saveImage } from "@/lib/db";
@@ -357,23 +358,11 @@ export function ResultView({ initialJob }: ResultViewProps) {
       </Card>
 
       {previewImage?.url && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-          onClick={() => setPreviewImage(null)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative h-[90vh] w-[90vw]">
-            <Image
-              src={previewImage.url}
-              alt="预览"
-              fill
-              className="rounded-2xl object-contain shadow-2xl"
-              sizes="90vw"
-              priority
-            />
-          </div>
-        </div>
+        <ImageLightbox
+          imageUrl={previewImage.url}
+          prompt={job.refinedPrompt || job.prompt}
+          onClose={() => setPreviewImage(null)}
+        />
       )}
     </div>
   );

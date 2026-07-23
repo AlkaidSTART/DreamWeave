@@ -13,7 +13,7 @@ export function setupScrollRevealAnimations() {
       scrollTrigger: {
         trigger: section,
         start: "top 82%",
-        toggleActions: "play none none reverse",
+        once: true,
       },
     });
 
@@ -62,7 +62,7 @@ export function setupScrollRevealAnimations() {
       scrollTrigger: {
         trigger: card,
         start: "top 85%",
-        toggleActions: "play none none reverse",
+        once: true,
       },
     });
   });
@@ -95,7 +95,7 @@ export function setupScrollRevealAnimations() {
       scrollTrigger: {
         trigger: card,
         start: "top 85%",
-        toggleActions: "play none none reverse",
+        once: true,
       },
     });
   });
@@ -111,7 +111,7 @@ export function setupScrollRevealAnimations() {
         scrollTrigger: {
           trigger: line,
           start: "top 85%",
-          toggleActions: "play none none reverse",
+          once: true,
         },
       },
     );
@@ -128,7 +128,7 @@ export function setupScrollRevealAnimations() {
       scrollTrigger: {
         trigger: item,
         start: "top 88%",
-        toggleActions: "play none none reverse",
+        once: true,
       },
     });
   });

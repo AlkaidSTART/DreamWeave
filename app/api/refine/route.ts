@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { promptService } from "@/src/services/PromptService";
-import { getSkillTemplate } from "@/src/skills/templates";
+import { getSkillTemplate, getSkillType } from "@/src/skills/templates";
 import type { ApiResponse } from "@/lib/types";
 
 const refineSchema = z.object({
@@ -25,11 +25,16 @@ export async function POST(request: Request) {
 
     const { prompt, type, skillId } = parsed.data;
     const skillTemplate = getSkillTemplate(skillId);
-    const refinedPrompt = await promptService.refine(prompt, type, skillTemplate);
+    const skillType = getSkillType(skillId);
 
-    const response: ApiResponse<{ refinedPrompt: string }> = {
+    const [refinedPrompt, polishedPrompt] = await Promise.all([
+      promptService.refine(prompt, type, skillTemplate, skillType),
+      promptService.polish(prompt, type, skillTemplate, skillType),
+    ]);
+
+    const response: ApiResponse<{ refinedPrompt: string; polishedPrompt: string }> = {
       success: true,
-      data: { refinedPrompt },
+      data: { refinedPrompt, polishedPrompt },
     };
 
     return NextResponse.json(response);

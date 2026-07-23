@@ -1,7 +1,7 @@
 import { ImageGenerationService } from "@/src/services/ImageGenerationService";
 import { jobStorage } from "@/src/services/JobStorageService";
 import { promptService } from "@/src/services/PromptService";
-import { getSkillTemplate } from "@/src/skills/templates";
+import { getSkillTemplate, getSkillType } from "@/src/skills/templates";
 import type {
   CreateGenerationRequest,
   GenerationJob,
@@ -48,7 +48,13 @@ export async function createJob(request: CreateGenerationRequest): Promise<Gener
   await jobStorage.save(job);
 
   const skillTemplate = getSkillTemplate(request.skillId);
-  const refinedPrompt = await promptService.refine(request.prompt, request.type, skillTemplate);
+  const skillType = getSkillType(request.skillId);
+  const refinedPrompt = await promptService.refine(
+    request.prompt,
+    request.type,
+    skillTemplate,
+    skillType,
+  );
   job.refinedPrompt = refinedPrompt;
   await jobStorage.updatePrompt(id, refinedPrompt);
 
