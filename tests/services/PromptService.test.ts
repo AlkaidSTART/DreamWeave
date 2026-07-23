@@ -87,16 +87,21 @@ describe("PromptService", () => {
     process.env.IMAGE_GENERATION_API_KEY = "test-key";
     process.env.IMAGE_GENERATION_API_URL = "https://apihub.agnes-ai.com/v1/images/generations";
 
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      text: vi.fn().mockResolvedValue(""),
-      json: vi.fn().mockResolvedValue({
-        choices: [{ message: { content: "A cute cat playing on grass, soft sunlight, 8k ultra detail" } }],
-      }),
-    } as unknown as Response);
+    let requestBody: unknown;
+    globalThis.fetch = vi.fn().mockImplementation(async (_url, init) => {
+      requestBody = JSON.parse((init as RequestInit).body as string);
+      return {
+        ok: true,
+        text: vi.fn().mockResolvedValue(""),
+        json: vi.fn().mockResolvedValue({
+          choices: [{ message: { content: "一只毛茸茸的小猫在青翠草地上嬉戏，午后柔和阳光洒落，细腻毛发质感，温暖治愈氛围，高细节插画风格" } }],
+        }),
+      } as unknown as Response;
+    });
 
     const result = await service.polish("一只猫", "text-to-image");
-    expect(result).toContain("A cute cat");
+    expect(result).toContain("小猫");
+    expect(JSON.stringify(requestBody)).toContain("提示词工程师");
 
     globalThis.fetch = originalFetch;
     process.env.IMAGE_GENERATION_API_KEY = originalKey;

@@ -38,13 +38,13 @@ const IMAGE_TO_IMAGE_PRESERVE = [
   "保留原图空间关系",
 ];
 
-const POLISH_SYSTEM_PROMPT = `You are an expert prompt engineer for AI image generation.
-Your task is to rewrite the user's description into a high-quality image-generation prompt.
-Rules:
-1. Preserve the user's original intent; do not add unrelated elements.
-2. Enhance lighting, composition, texture, and style details.
-3. Prefer concise English output while keeping the original language if the input is clearly in Chinese.
-4. Output only the final prompt. No explanations, no quotation marks, no markdown.`;
+const POLISH_SYSTEM_PROMPT = `你是一位专业的 AI 图像生成提示词工程师。
+任务：将用户的描述改写为更适合图像生成模型使用的高质量中文提示词。
+规则：
+1. 必须保留用户的原始意图，不得添加无关元素。
+2. 补充并增强光影、构图、质感、风格、氛围等细节，让提示词更具体、更专业。
+3. 输出必须是中文，保持简洁流畅，不要中英混杂。
+4. 只返回最终提示词文本，不要解释、不要加引号、不要使用 markdown。`;
 
 interface AgnesChatResponse {
   choices?: Array<{
@@ -181,7 +181,8 @@ export class PromptService {
       throw new Error("缺少 Agnes Chat API Key，请设置 AGNES_CHAT_API_KEY 或 IMAGE_GENERATION_API_KEY");
     }
 
-    const userPrompt = `Skill type: ${skillType ?? "general"}\nOriginal description: ${prompt}\n\nRewrite this into a high-quality image-generation prompt.`;
+    const userPrompt = `技能类型：${skillType ?? "general"}\n原始描述：${prompt}\n\n请将上述原始描述改写为高质量的中文图像生成提示词。要求：保留原意，补充光影、构图、质感、风格与氛围细节，输出纯中文。`;
+
 
     try {
       const response = await fetch(baseUrl, {
