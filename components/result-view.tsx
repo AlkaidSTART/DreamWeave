@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { Download, RefreshCw, Copy, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { ResultStack } from "@/components/result-stack";
 import { ImageLightbox } from "@/components/image-lightbox";
-import { getJob, subscribeJobProgress } from "@/lib/api";
+import { createGeneration, getJob, subscribeJobProgress } from "@/lib/api";
 import { getJobFromDB, getImagesByJobId, saveJob, saveImage } from "@/lib/db";
 import { toast } from "@/stores/toast-store";
 import { prefersReducedMotion } from "@/lib/home-animation-utils";
@@ -64,10 +65,12 @@ function getProgressStage(progress: number, status: JobStatus): string {
 }
 
 export function ResultView({ initialJob }: ResultViewProps) {
+  const router = useRouter();
   const [job, setJob] = useState<GenerationJob>(initialJob);
   const [previewImage, setPreviewImage] = useState<GeneratedImage | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
   const [storedImages, setStoredImages] = useState<Record<string, StoredImage>>({});
+  const [retryingImageId, setRetryingImageId] = useState<string | null>(null);
   const { copied, copy } = useCopied();
   const statusCardRef = useRef<HTMLDivElement>(null);
   const prevStatusRef = useRef<string>(initialJob.status);
@@ -224,6 +227,34 @@ export function ResultView({ initialJob }: ResultViewProps) {
     }
   };
 
+  const handleRetryImage = async (image: GeneratedImage) => {
+    if (retryingImageId) return;
+
+    setRetryingImageId(image.id);
+    try {
+      const newJob = await createGeneration({
+        type: job.type,
+        prompt: job.refinedPrompt || job.prompt,
+        imageCount: 1,
+        ratio: job.ratio,
+        quality: job.quality,
+        skillId: job.skillId,
+        inputImage: job.inputImage ?? null,
+      });
+
+      await saveJob(newJob);
+      toast.success("已重新生成", "正在跳转到新任务...");
+      router.push(`/result/${newJob.id}`);
+    } catch (error) {
+      toast.error(
+        "重新生成失败",
+        error instanceof Error ? error.message : "请稍后重试",
+      );
+    } finally {
+      setRetryingImageId(null);
+    }
+  };
+
   const handleCopyPrompt = async (text: string, label: string) => {
     const ok = await copy(text);
     if (ok) {
@@ -320,7 +351,12 @@ export function ResultView({ initialJob }: ResultViewProps) {
       </Card>
 
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border bg-card/40 p-4 backdrop-blur-md">
-        <ResultStack images={resultsWithStoredUrls} onPreview={setPreviewImage} />
+        <ResultStack
+          images={resultsWithStoredUrls}
+          onPreview={setPreviewImage}
+          onRetry={handleRetryImage}
+          retryingImageId={retryingImageId}
+        />
       </div>
 
       <Card className="shrink-0">
