@@ -27,8 +27,8 @@ const sizeStyles = {
 
 const PROGRESS_RADIUS = 74;
 const PROGRESS_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_RADIUS;
-const PROGRESS_INTERVAL_MS = 200;
-const MAX_ESTIMATED_PROGRESS = 95;
+const PROGRESS_INTERVAL_MS = 400;
+const MAX_ESTIMATED_PROGRESS = 85;
 
 const DEFAULT_TIPS = [
   "用具体名词开头，比如『一只橘猫』而不是『一只猫』",
@@ -45,8 +45,18 @@ function getPhaseIndex(progress: number, phaseCount: number): number {
   if (phaseCount <= 1) return 0;
   return Math.min(
     phaseCount - 1,
-    Math.floor((progress / (MAX_ESTIMATED_PROGRESS + 1)) * phaseCount),
+    Math.floor((progress / 100) * phaseCount),
   );
+}
+
+function getDefaultStageLabel(progress: number): string {
+  if (progress < 12) return "正在排队";
+  if (progress < 28) return "正在解析提示词";
+  if (progress < 45) return "正在构思画面";
+  if (progress < 62) return "正在生成图像";
+  if (progress < 78) return "正在润色细节";
+  if (progress < 90) return "正在保存结果";
+  return "即将完成";
 }
 
 function CoreIndicator({
@@ -268,7 +278,9 @@ export function GenerationLoader({
 
   const hasPhases = Boolean(phases?.length);
   const phaseIndex = getPhaseIndex(progress, phases?.length ?? 0);
-  const currentPhase = hasPhases ? phases?.[phaseIndex] ?? label : label;
+  const explicitPhase = hasPhases ? phases?.[phaseIndex] ?? label : undefined;
+  const currentPhase =
+    explicitPhase ?? (showProgress ? getDefaultStageLabel(progress) : label);
   const roundedProgress = Math.round(progress);
 
   useEffect(() => {
@@ -277,11 +289,9 @@ export function GenerationLoader({
     const progressTimer = window.setInterval(() => {
       setProgress((current) => {
         if (current >= MAX_ESTIMATED_PROGRESS) return current;
-        const remaining = 100 - current;
-        return Math.min(
-          MAX_ESTIMATED_PROGRESS,
-          current + Math.max(0.25, remaining * 0.035),
-        );
+        const remaining = MAX_ESTIMATED_PROGRESS - current;
+        const increment = Math.max(0.12, remaining * 0.018);
+        return Math.min(MAX_ESTIMATED_PROGRESS, current + increment);
       });
     }, PROGRESS_INTERVAL_MS);
 

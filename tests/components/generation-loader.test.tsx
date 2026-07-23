@@ -27,7 +27,7 @@ describe("GenerationLoader", () => {
     expect(screen.getByText("0%")).toBeInTheDocument();
 
     act(() => {
-      vi.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(12000);
     });
 
     expect(screen.getByText("正在生成图像")).toBeInTheDocument();

@@ -10,11 +10,11 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { ResultStack } from "@/components/result-stack";
 import { ImageLightbox } from "@/components/image-lightbox";
-import { getJob } from "@/lib/api";
+import { getJob, subscribeJobProgress } from "@/lib/api";
 import { getJobFromDB, getImagesByJobId, saveJob, saveImage } from "@/lib/db";
 import { toast } from "@/stores/toast-store";
 import { prefersReducedMotion } from "@/lib/home-animation-utils";
-import type { GenerationJob, GeneratedImage, StoredImage } from "@/lib/types";
+import type { GenerationJob, GeneratedImage, StoredImage, JobStatus } from "@/lib/types";
 
 interface ResultViewProps {
   initialJob: GenerationJob;
@@ -49,6 +49,18 @@ async function fetchImageBlob(url: string): Promise<Blob | null> {
 
 function isLocalUrl(url: string): boolean {
   return url.startsWith("blob:") || url.startsWith("/uploads/");
+}
+
+function getProgressStage(progress: number, status: JobStatus): string {
+  if (status === "completed") return "生成完成";
+  if (status === "failed") return "生成失败";
+  if (progress < 12) return "任务排队中";
+  if (progress < 28) return "正在解析提示词";
+  if (progress < 45) return "AI 正在构思画面";
+  if (progress < 62) return "正在生成图像";
+  if (progress < 78) return "正在润色细节";
+  if (progress < 90) return "正在保存结果";
+  return "即将完成";
 }
 
 export function ResultView({ initialJob }: ResultViewProps) {
@@ -130,6 +142,36 @@ export function ResultView({ initialJob }: ResultViewProps) {
 
     void persistResults();
   }, [job, persistImage]);
+
+  useEffect(() => {
+    if (job.status === "completed" || job.status === "failed") return;
+
+    const unsubscribe = subscribeJobProgress(job.id, {
+      onProgress: (progress) => {
+        setJob((current) => ({ ...current, progress }));
+      },
+      onStatusChange: (status) => {
+        setJob((current) => ({ ...current, status: status as JobStatus }));
+      },
+      onResult: (result) => {
+        setJob((current) => {
+          const results = current.results.map((item) =>
+            item.id === result.id ? result : item,
+          );
+          return { ...current, results };
+        });
+      },
+      onComplete: (completedJob) => {
+        setJob(completedJob);
+      },
+      onError: (error) => {
+        setJob((current) => ({ ...current, status: "failed", error }));
+        toast.error("生成失败", error);
+      },
+    });
+
+    return unsubscribe;
+  }, [job.id, job.status]);
 
   useEffect(() => {
     if (prefersReducedMotion() || !statusCardRef.current) return;
@@ -225,16 +267,16 @@ export function ResultView({ initialJob }: ResultViewProps) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">
             <div className="mb-1.5 flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
-              {job.status === "processing" && <Spinner size="sm" className="text-primary" />}
-              <span>
-                {job.status === "pending" && "等待生成..."}
-                {job.status === "processing" && `正在生成 ${completedCount}/${job.imageCount} 张图片`}
-                {job.status === "completed" && "生成完成"}
-                {job.status === "failed" && "生成失败"}
+              {(job.status === "pending" || job.status === "processing") && (
+                <Spinner size="sm" className="text-primary" />
+              )}
+              <span>{getProgressStage(job.progress, job.status)}</span>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {job.progress}%
               </span>
-              {job.status === "processing" && (
+              {job.status === "processing" && completedCount > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  预计还需 10-30 秒
+                  已完成 {completedCount}/{job.imageCount} 张
                 </span>
               )}
             </div>
