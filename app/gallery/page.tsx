@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Trash2, RefreshCw, ImageIcon } from "lucide-react";
+import { Trash2, RefreshCw, ImageIcon, Maximize2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { PageEntrance } from "@/components/page-entrance";
 import { Button } from "@/components/ui/button";
 import { GenerationLoader } from "@/components/generation-loader";
+import { ImageLightbox } from "@/components/image-lightbox";
 import { listJobsFromDB, deleteJobFromDB, getImagesByJobId } from "@/lib/db";
 import { toast } from "@/stores/toast-store";
 import { cn } from "@/lib/utils";
@@ -31,11 +32,17 @@ function getJobThumbnail(job: StoredJob, images: StoredImage[]): string | null {
   return stored?.objectUrl || completed.url || null;
 }
 
+interface LightboxState {
+  imageUrl: string;
+  prompt: string;
+}
+
 export default function GalleryPage() {
   const router = useRouter();
   const [jobs, setJobs] = useState<StoredJob[]>([]);
   const [images, setImages] = useState<Record<string, StoredImage[]>>({});
   const [loading, setLoading] = useState(true);
+  const [lightbox, setLightbox] = useState<LightboxState | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,15 +125,26 @@ export default function GalleryPage() {
                     key={job.id}
                     className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card/60 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
                   >
-                    <Link href={`/result/${job.id}`} className="relative aspect-square overflow-hidden bg-muted/20">
+                    <div className="relative aspect-square overflow-hidden bg-muted/20">
                       {thumbnail ? (
-                        <Image
-                          src={thumbnail}
-                          alt={job.prompt}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
+                        <button
+                          type="button"
+                          onClick={() => setLightbox({ imageUrl: thumbnail, prompt: job.prompt })}
+                          className="relative h-full w-full overflow-hidden"
+                          aria-label="全屏查看"
+                        >
+                          <Image
+                            src={thumbnail}
+                            alt={job.prompt}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          />
+                          <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                          <div className="absolute right-3 top-3 rounded-full bg-black/40 p-1.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                            <Maximize2 className="h-4 w-4 text-white" />
+                          </div>
+                        </button>
                       ) : (
                         <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
                           {job.status === "processing" ? (
@@ -139,18 +157,21 @@ export default function GalleryPage() {
                           </span>
                         </div>
                       )}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <Link
+                        href={`/result/${job.id}`}
+                        className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                      >
                         <p className="line-clamp-2 text-sm font-medium text-white">
                           {job.prompt}
                         </p>
-                      </div>
-                    </Link>
+                      </Link>
+                    </div>
 
                     <div className="flex flex-1 flex-col gap-2 p-4">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="line-clamp-1 flex-1 text-sm font-medium text-foreground">
+                        <Link href={`/result/${job.id}`} className="line-clamp-1 flex-1 text-sm font-medium text-foreground transition-colors hover:text-primary">
                           {job.prompt}
-                        </p>
+                        </Link>
                         <button
                           type="button"
                           onClick={() => handleDelete(job.id)}
@@ -185,6 +206,14 @@ export default function GalleryPage() {
             </div>
           )}
         </div>
+
+        {lightbox && (
+          <ImageLightbox
+            imageUrl={lightbox.imageUrl}
+            prompt={lightbox.prompt}
+            onClose={() => setLightbox(null)}
+          />
+        )}
       </PageShell>
     </PageEntrance>
   );

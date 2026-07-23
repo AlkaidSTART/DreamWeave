@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { cn } from "@/lib/utils";
@@ -12,118 +12,144 @@ interface GenerationLoaderProps {
   className?: string;
   label?: string;
   size?: "sm" | "md" | "lg";
+  phases?: string[];
+  showProgress?: boolean;
 }
 
 const sizeStyles = {
-  sm: {
-    container: "w-28 h-28",
-    text: "text-xs",
-  },
-  md: {
-    container: "w-44 h-44",
-    text: "text-sm",
-  },
-  lg: {
-    container: "w-60 h-60",
-    text: "text-base",
-  },
+  sm: { container: "h-20 w-20", text: "text-xs", progress: "text-lg" },
+  md: { container: "h-36 w-36", text: "text-sm", progress: "text-2xl" },
+  lg: { container: "h-52 w-52", text: "text-base", progress: "text-3xl" },
 };
 
-const outerParticles = [0, 72, 144, 216, 288];
-const middleParticles = [36, 108, 180, 252];
+const PROGRESS_RADIUS = 74;
+const PROGRESS_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_RADIUS;
+const PROGRESS_INTERVAL_MS = 200;
+const MAX_ESTIMATED_PROGRESS = 95;
+
+function getPhaseIndex(progress: number, phaseCount: number): number {
+  if (phaseCount <= 1) return 0;
+  return Math.min(
+    phaseCount - 1,
+    Math.floor((progress / (MAX_ESTIMATED_PROGRESS + 1)) * phaseCount),
+  );
+}
 
 export function GenerationLoader({
   className,
   label = "生成中",
   size = "md",
+  phases,
+  showProgress = false,
 }: GenerationLoaderProps) {
+  const [progress, setProgress] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const orbitRef = useRef<SVGGElement>(null);
+  const progressRef = useRef<SVGCircleElement>(null);
   const coreRef = useRef<HTMLDivElement>(null);
-  const ring1Ref = useRef<SVGGElement>(null);
-  const ring2Ref = useRef<SVGGElement>(null);
-  const ring3Ref = useRef<SVGGElement>(null);
-  const shimmerRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
+  const phaseRef = useRef<HTMLSpanElement>(null);
+
+  const hasPhases = Boolean(phases?.length);
+  const phaseIndex = getPhaseIndex(progress, phases?.length ?? 0);
+  const currentPhase = hasPhases ? phases?.[phaseIndex] ?? label : label;
+  const roundedProgress = Math.round(progress);
+
+  useEffect(() => {
+    if (!hasPhases && !showProgress) return;
+
+    const progressTimer = window.setInterval(() => {
+      setProgress((current) => {
+        if (current >= MAX_ESTIMATED_PROGRESS) return current;
+        const remaining = 100 - current;
+        return Math.min(
+          MAX_ESTIMATED_PROGRESS,
+          current + Math.max(0.25, remaining * 0.035),
+        );
+      });
+    }, PROGRESS_INTERVAL_MS);
+
+    return () => window.clearInterval(progressTimer);
+  }, [hasPhases, showProgress]);
 
   useGSAP(
     () => {
-      if (!containerRef.current || prefersReducedMotion()) return;
+      if (prefersReducedMotion()) return;
 
-      const ctx = gsap.context(() => {
-        const ringOrigin = { svgOrigin: "100 100" };
+      const timeline = gsap.timeline({
+        defaults: { ease: "power3.out" },
+      });
 
-        gsap.to(ring1Ref.current, {
-          rotation: 360,
-          duration: 24,
-          ease: "none",
-          repeat: -1,
-          ...ringOrigin,
-        });
-
-        gsap.to(ring2Ref.current, {
-          rotation: -360,
-          duration: 16,
-          ease: "none",
-          repeat: -1,
-          ...ringOrigin,
-        });
-
-        gsap.to(ring3Ref.current, {
-          rotation: 360,
-          duration: 10,
-          ease: "none",
-          repeat: -1,
-          ...ringOrigin,
-        });
-
-        gsap.to(coreRef.current, {
-          scale: 1.14,
-          opacity: 0.8,
-          duration: 1.5,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        });
-
-        gsap.to(glowRef.current, {
-          scale: 1.25,
-          opacity: 0.55,
-          duration: 2.2,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        });
-
-        gsap.fromTo(
-          shimmerRef.current,
-          { x: "-120%", opacity: 0 },
-          {
-            x: "120%",
-            opacity: 0.45,
-            duration: 2,
-            ease: "power2.inOut",
-            repeat: -1,
-            repeatDelay: 0.8,
-          },
+      timeline
+        .fromTo(
+          containerRef.current,
+          { autoAlpha: 0, scale: 0.96 },
+          { autoAlpha: 1, scale: 1, duration: 0.6 },
+        )
+        .fromTo(
+          coreRef.current,
+          { scale: 0.72 },
+          { scale: 1, duration: 0.7 },
+          "<0.05",
         );
 
-        gsap.to(textRef.current, {
-          opacity: 0.4,
-          y: 4,
-          duration: 1.6,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        });
-      }, containerRef.current);
+      gsap.to(orbitRef.current, {
+        rotation: 360,
+        svgOrigin: "100 100",
+        duration: 18,
+        ease: "none",
+        repeat: -1,
+      });
 
-      return () => ctx.revert();
+      gsap.to(coreRef.current, {
+        scale: 1.08,
+        opacity: 0.82,
+        duration: 1.8,
+        ease: "sine.inOut",
+        repeat: -1,
+        yoyo: true,
+      });
     },
     { scope: containerRef },
   );
 
+  useGSAP(
+    () => {
+      if (!phaseRef.current || prefersReducedMotion()) return;
+
+      gsap.fromTo(
+        phaseRef.current,
+        { autoAlpha: 0, y: 6 },
+        { autoAlpha: 1, y: 0, duration: 0.35, ease: "power2.out" },
+      );
+    },
+    {
+      scope: containerRef,
+      dependencies: [currentPhase],
+      revertOnUpdate: true,
+    },
+  );
+
+  useEffect(() => {
+    if (!progressRef.current) return;
+
+    const offset =
+      PROGRESS_CIRCUMFERENCE -
+      (progress / 100) * PROGRESS_CIRCUMFERENCE;
+    const tween = gsap.to(progressRef.current, {
+      attr: { strokeDashoffset: offset },
+      duration: prefersReducedMotion() ? 0 : 0.35,
+      ease: "power2.out",
+    });
+
+    return () => {
+      tween.kill();
+    };
+  }, [progress]);
+
   const styles = sizeStyles[size];
+  const accessibleLabel = showProgress
+    ? `${currentPhase}，当前进度 ${roundedProgress}%`
+    : currentPhase;
 
   return (
     <div
@@ -131,98 +157,80 @@ export function GenerationLoader({
       className={cn("flex flex-col items-center justify-center gap-5", className)}
       role="status"
       aria-live="polite"
-      aria-label={label}
+      aria-label={accessibleLabel}
     >
-      <div className={cn("relative flex items-center justify-center", styles.container)}>
-        <div
-          ref={glowRef}
-          className="absolute inset-[-30%] rounded-full bg-primary/10 blur-3xl will-change-transform"
-        />
-
+      <div className={cn("relative grid place-items-center", styles.container)}>
+        <div className="absolute inset-[18%] rounded-full bg-primary/10 blur-2xl" />
         <svg
           viewBox="0 0 200 200"
           className="absolute inset-0 h-full w-full overflow-visible"
           aria-hidden="true"
         >
-          <g ref={ring1Ref} className="will-change-transform">
+          <circle
+            cx="100"
+            cy="100"
+            r={PROGRESS_RADIUS}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="text-primary/10"
+          />
+          {showProgress && (
+            <circle
+              ref={progressRef}
+              cx="100"
+              cy="100"
+              r={PROGRESS_RADIUS}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={PROGRESS_CIRCUMFERENCE}
+              strokeDashoffset={PROGRESS_CIRCUMFERENCE}
+              className="text-primary"
+              transform="rotate(-90 100 100)"
+            />
+          )}
+          <g ref={orbitRef} className="will-change-transform">
             <circle
               cx="100"
               cy="100"
-              r="92"
+              r="91"
               fill="none"
-              stroke="rgba(99,102,241,0.14)"
+              stroke="currentColor"
               strokeWidth="1"
+              strokeDasharray="2 8"
+              className="text-foreground/12"
             />
-            {outerParticles.map((angle, index) => {
-              const rad = (angle * Math.PI) / 180;
-              return (
-                <circle
-                  key={index}
-                  cx={100 + 92 * Math.cos(rad)}
-                  cy={100 + 92 * Math.sin(rad)}
-                  r="2.5"
-                  fill="rgba(99,102,241,0.65)"
-                />
-              );
-            })}
-          </g>
-
-          <g ref={ring2Ref} className="will-change-transform">
-            <circle
-              cx="100"
-              cy="100"
-              r="70"
-              fill="none"
-              stroke="rgba(20,184,166,0.18)"
-              strokeWidth="1"
-              strokeDasharray="5 5"
-            />
-            {middleParticles.map((angle, index) => {
-              const rad = (angle * Math.PI) / 180;
-              return (
-                <circle
-                  key={index}
-                  cx={100 + 70 * Math.cos(rad)}
-                  cy={100 + 70 * Math.sin(rad)}
-                  r="2"
-                  fill="rgba(20,184,166,0.75)"
-                />
-              );
-            })}
-          </g>
-
-          <g ref={ring3Ref} className="will-change-transform">
-            <circle
-              cx="100"
-              cy="100"
-              r="48"
-              fill="none"
-              stroke="rgba(99,102,241,0.2)"
-              strokeWidth="1"
-            />
+            <circle cx="191" cy="100" r="3" className="fill-mint-400" />
           </g>
         </svg>
 
         <div
           ref={coreRef}
-          className="relative z-10 aspect-square h-[30%] rounded-full bg-gradient-to-br from-primary via-indigo-400 to-mint-400 shadow-[0_0_40px_rgba(99,102,241,0.35)] will-change-transform"
+          className="relative grid aspect-square h-[30%] place-items-center rounded-full border border-white/40 bg-primary shadow-[0_8px_28px_rgba(99,102,241,0.24)] will-change-transform"
         >
-          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-black/10 to-transparent" />
-          <div className="absolute inset-[15%] rounded-full bg-white/20 blur-md" />
+          <div className="h-2 w-2 rounded-full bg-white/90 shadow-[0_0_12px_rgba(255,255,255,0.7)]" />
         </div>
 
-        <div
-          ref={shimmerRef}
-          className="pointer-events-none absolute inset-0 z-20 w-full -translate-x-full bg-gradient-to-r from-transparent via-white/18 to-transparent will-change-transform"
-        />
+        {showProgress && (
+          <span
+            className={cn(
+              "absolute bottom-[17%] font-display font-semibold tabular-nums text-foreground",
+              styles.progress,
+            )}
+          >
+            {roundedProgress}%
+          </span>
+        )}
       </div>
 
-      {label && (
+      {currentPhase && (
         <span
-          ref={textRef}
-          className={cn("font-medium text-muted-foreground will-change-transform", styles.text)}
+          ref={phaseRef}
+          className={cn("font-medium text-foreground will-change-transform", styles.text)}
         >
-          {label}
+          {currentPhase}
         </span>
       )}
     </div>

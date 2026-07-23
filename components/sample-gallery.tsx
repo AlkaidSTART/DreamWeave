@@ -6,47 +6,40 @@ import { cn } from "@/lib/utils";
 interface SampleItem {
   prompt: string;
   label: string;
+  url?: string;
 }
 
 const samples: SampleItem[] = [
   {
-    prompt:
-      "A serene Japanese garden with cherry blossoms, soft morning light, minimalist composition, ultra detailed, 8k",
+    prompt: "A serene Japanese garden with cherry blossoms, soft morning light, minimalist composition, ultra detailed, 8k",
     label: "日式庭院",
   },
   {
-    prompt:
-      "Futuristic neon cityscape at night, cyberpunk aesthetic, rain soaked streets with reflections, cinematic lighting",
+    prompt: "Futuristic neon cityscape at night, cyberpunk aesthetic, rain soaked streets with reflections, cinematic lighting",
     label: "赛博都市",
   },
   {
-    prompt:
-      "Cute fluffy kitten playing on fresh green grass, golden hour sunlight, photorealistic, high detail",
+    prompt: "Cute fluffy kitten playing on fresh green grass, golden hour sunlight, photorealistic, high detail",
     label: "萌宠时光",
   },
   {
-    prompt:
-      "Elegant minimalist product photography of a luxury perfume bottle, soft gradient background, studio lighting",
+    prompt: "Elegant minimalist product photography of a luxury perfume bottle, soft gradient background, studio lighting",
     label: "极简产品",
   },
   {
-    prompt:
-      "Dreamy watercolor landscape with misty mountains and pine trees, pastel colors, artistic hand painted style",
+    prompt: "Dreamy watercolor landscape with misty mountains and pine trees, pastel colors, artistic hand painted style",
     label: "水墨山水",
   },
   {
-    prompt:
-      "Modern abstract 3D render with smooth geometric shapes, vibrant gradients, clean composition, soft shadows",
+    prompt: "Modern abstract 3D render with smooth geometric shapes, vibrant gradients, clean composition, soft shadows",
     label: "抽象几何",
   },
   {
-    prompt:
-      "Vintage film portrait of a young woman, warm golden tones, soft bokeh background, cinematic mood",
+    prompt: "Vintage film portrait of a young woman, warm golden tones, soft bokeh background, cinematic mood",
     label: "复古肖像",
   },
   {
-    prompt:
-      "Surreal floating islands in a cloudy sky, fantasy art, dramatic lighting, epic scale, highly detailed",
+    prompt: "Surreal floating islands in a cloudy sky, fantasy art, dramatic lighting, epic scale, highly detailed",
     label: "奇幻浮岛",
   },
 ];
@@ -81,7 +74,7 @@ export function SampleGallery({ className }: { className?: string }) {
             className="sample-item group relative aspect-[3/4] overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm backdrop-blur-md"
           >
             <Image
-              src={getSampleUrl(item.prompt)}
+              src={item.url || getSampleUrl(item.prompt)}
               alt={item.label}
               fill
               className="object-cover transition-transform duration-500 ease-smooth group-hover:scale-105"

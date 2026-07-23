@@ -2,6 +2,7 @@ import type {
   ApiResponse,
   CreateGenerationRequest,
   GenerationJob,
+  RefineResponse,
   Skill,
   UploadImageResponse,
 } from "@/lib/types";
@@ -30,6 +31,19 @@ export async function createGeneration(request: CreateGenerationRequest): Promis
     body: JSON.stringify(request),
   });
   return handleResponse<GenerationJob>(response);
+}
+
+export async function refinePrompt(
+  prompt: string,
+  type: "text-to-image" | "image-to-image",
+  skillId?: string,
+): Promise<RefineResponse> {
+  const response = await fetch(`${API_BASE}/refine`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, type, skillId }),
+  });
+  return handleResponse<RefineResponse>(response);
 }
 
 export async function getJob(jobId: string, baseUrl?: string): Promise<GenerationJob> {

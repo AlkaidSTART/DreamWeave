@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
+import { gsap } from "gsap";
 import { Download, RefreshCw, Copy, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ImageResultCard } from "@/components/image-result-card";
+import { ImageLightbox } from "@/components/image-lightbox";
 import { GenerationLoader } from "@/components/generation-loader";
 import { getJob } from "@/lib/api";
 import { getJobFromDB, getImagesByJobId, saveJob, saveImage } from "@/lib/db";
 import { toast } from "@/stores/toast-store";
+import { prefersReducedMotion } from "@/lib/home-animation-utils";
 import type { GenerationJob, GeneratedImage, StoredImage } from "@/lib/types";
 
 interface ResultViewProps {
@@ -54,6 +57,9 @@ export function ResultView({ initialJob }: ResultViewProps) {
   const [showOriginal, setShowOriginal] = useState(false);
   const [storedImages, setStoredImages] = useState<Record<string, StoredImage>>({});
   const { copied, copy } = useCopied();
+  const statusCardRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const prevStatusRef = useRef<string>(initialJob.status);
 
   const persistImage = useCallback(async (image: GeneratedImage) => {
     if (!image.url || storedImages[image.id]?.blob) return;
@@ -126,6 +132,72 @@ export function ResultView({ initialJob }: ResultViewProps) {
     void persistResults();
   }, [job, persistImage]);
 
+  useEffect(() => {
+    if (prefersReducedMotion() || !statusCardRef.current) return;
+
+    const currentStatus = job.status;
+    const previousStatus = prevStatusRef.current;
+
+    if (currentStatus !== previousStatus) {
+      const ctx = gsap.context(() => {
+        gsap.fromTo(
+          statusCardRef.current,
+          { scale: 0.98, opacity: 0.85 },
+          {
+            scale: 1,
+            opacity: 1,
+            duration: 0.45,
+            ease: "power2.out",
+            clearProps: "transform",
+          },
+        );
+
+        if (currentStatus === "completed") {
+          gsap.fromTo(
+            statusCardRef.current,
+            { boxShadow: "0 0 0 rgba(99,102,241,0)" },
+            {
+              boxShadow: "0 0 32px rgba(99,102,241,0.28)",
+              duration: 0.6,
+              ease: "power2.out",
+              yoyo: true,
+              repeat: 1,
+              clearProps: "boxShadow",
+            },
+          );
+        }
+      }, statusCardRef.current);
+
+      prevStatusRef.current = currentStatus;
+      return () => ctx.revert();
+    }
+  }, [job.status]);
+
+  useEffect(() => {
+    if (prefersReducedMotion() || !gridRef.current) return;
+
+    const cards = gridRef.current.querySelectorAll(".result-card");
+    if (cards.length === 0) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        cards,
+        { y: 28, opacity: 0, scale: 0.97 },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.55,
+          stagger: 0.08,
+          ease: "power2.out",
+          clearProps: "transform",
+        },
+      );
+    }, gridRef.current);
+
+    return () => ctx.revert();
+  }, [job.results.length]);
+
   const handleRetry = async () => {
     try {
       const refreshed = await getJob(job.id);
@@ -179,7 +251,7 @@ export function ResultView({ initialJob }: ResultViewProps) {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 px-4 pb-20 md:px-6 lg:px-8">
-      <Card className="sticky top-20 z-30">
+      <Card ref={statusCardRef} className="sticky top-20 z-30 will-change-transform">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">
             <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
@@ -242,7 +314,7 @@ export function ResultView({ initialJob }: ResultViewProps) {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div ref={gridRef} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {resultsWithStoredUrls.map((result) => (
           <ImageResultCard
             key={result.id}
@@ -286,23 +358,11 @@ export function ResultView({ initialJob }: ResultViewProps) {
       </Card>
 
       {previewImage?.url && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-          onClick={() => setPreviewImage(null)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative h-[90vh] w-[90vw]">
-            <Image
-              src={previewImage.url}
-              alt="预览"
-              fill
-              className="rounded-2xl object-contain shadow-2xl"
-              sizes="90vw"
-              priority
-            />
-          </div>
-        </div>
+        <ImageLightbox
+          imageUrl={previewImage.url}
+          prompt={job.refinedPrompt || job.prompt}
+          onClose={() => setPreviewImage(null)}
+        />
       )}
     </div>
   );

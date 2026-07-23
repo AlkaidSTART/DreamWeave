@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -17,19 +17,20 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 h-16 w-full border-b border-white/20 bg-white/45 shadow-[0_4px_30px_rgba(0,0,0,0.04)] backdrop-blur-2xl dark:border-white/10 dark:bg-black/35 dark:shadow-[0_4px_30px_rgba(0,0,0,0.2)]">
+    <header className="sticky top-0 z-40 h-16 w-full border-b border-white/35 bg-gradient-to-b from-white/40 via-white/28 to-white/18 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur-2xl dark:border-white/10 dark:from-slate-950/45 dark:via-slate-950/30 dark:to-slate-950/18 dark:shadow-[0_10px_30px_rgba(0,0,0,0.24)]">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
         <Link
           href="/"
-          className="flex items-center gap-2 text-foreground transition-opacity hover:opacity-80"
+          className="flex items-center gap-2.5 text-foreground transition-all hover:opacity-85"
+          aria-label="Dreamweave 首页"
         >
-          <Sparkles className="h-6 w-6 text-primary" />
-          <span className="font-logo text-xl font-semibold tracking-tight">
+          <BrandMark className="h-9 w-9" />
+          <span className="font-logo text-xl font-semibold tracking-[0.01em]">
             Dreamweave
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 rounded-full border border-white/20 bg-white/40 px-1.5 py-1 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-white/5 md:flex">
+        <nav className="hidden items-center gap-1 rounded-full border border-white/35 bg-white/28 px-1.5 py-1.5 shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur-2xl ring-1 ring-white/35 dark:border-white/10 dark:bg-white/5 dark:shadow-[0_10px_30px_rgba(0,0,0,0.2)] dark:ring-white/10 md:flex">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
 
@@ -38,15 +39,15 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "relative rounded-full px-4 py-1.5 text-sm font-semibold transition-all",
+                  "relative rounded-full px-4 py-1.5 text-sm font-medium tracking-wide transition-all duration-200",
                   isActive
-                    ? "border border-primary/25 bg-primary/10 text-primary shadow-[0_2px_12px_rgba(99,102,241,0.18)] backdrop-blur-xl dark:border-primary/30 dark:bg-primary/15 dark:shadow-[0_2px_12px_rgba(99,102,241,0.12)]"
-                    : "font-medium text-muted-foreground hover:bg-white/60 hover:text-foreground hover:shadow-sm dark:hover:bg-white/10",
+                    ? "border border-white/50 bg-white/72 text-foreground shadow-[0_8px_20px_rgba(15,23,42,0.12)] ring-1 ring-white/60 backdrop-blur-xl dark:border-white/15 dark:bg-white/12 dark:text-white dark:shadow-[0_8px_20px_rgba(0,0,0,0.22)] dark:ring-white/15"
+                    : "text-muted-foreground/90 hover:bg-white/55 hover:text-foreground hover:shadow-[0_4px_14px_rgba(15,23,42,0.08)] dark:hover:bg-white/10 dark:hover:text-white",
                 )}
               >
                 {item.label}
                 {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
+                  <span className="absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_10px_rgba(99,102,241,0.7)]" />
                 )}
               </Link>
             );

@@ -42,12 +42,24 @@ export interface GenerationJob {
   error?: string;
 }
 
+export type SkillType =
+  | "general"
+  | "photography"
+  | "cinematic"
+  | "illustration"
+  | "cover"
+  | "infographic"
+  | "xhs"
+  | "article"
+  | "diagram";
+
 export interface Skill {
   id: string;
   name: string;
   category: string;
   description: string;
   template: string;
+  type?: SkillType;
   previewUrl?: string;
   isDefault: boolean;
 }
@@ -71,6 +83,11 @@ export interface UploadImageResponse {
   url: string;
   width: number;
   height: number;
+}
+
+export interface RefineResponse {
+  refinedPrompt: string;
+  polishedPrompt: string;
 }
 
 export interface ApiResponse<T = unknown> {

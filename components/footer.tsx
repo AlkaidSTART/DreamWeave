@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 
 const footerLinks = [
   { href: "/text-to-image", label: "文生图" },
@@ -8,14 +8,15 @@ const footerLinks = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card/50 backdrop-blur-xl">
+    <footer className="border-t border-white/25 bg-white/22 backdrop-blur-2xl dark:border-white/10 dark:bg-black/20">
       <div className="mx-auto max-w-7xl px-4 py-10 md:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <Link
             href="/"
-            className="flex items-center gap-2 text-foreground transition-opacity hover:opacity-80"
+            className="flex items-center gap-2.5 text-foreground transition-opacity hover:opacity-80"
+            aria-label="Dreamweave 首页"
           >
-            <Sparkles className="h-5 w-5 text-primary" />
+            <BrandMark className="h-8 w-8" />
             <span className="font-display text-lg font-semibold tracking-tight">
               Dreamweave
             </span>

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { PromptService } from "@/src/services/PromptService";
 
 describe("PromptService", () => {
@@ -50,8 +50,61 @@ describe("PromptService", () => {
     expect(result).toContain("一只猫");
   });
 
+  it("should not add photorealistic phrases for illustration skill type", async () => {
+    const result = await service.refine(
+      "一只猫",
+      "text-to-image",
+      "anime style illustration, {prompt}, vibrant colors",
+      "illustration",
+    );
+    expect(result).toContain("anime style illustration");
+    expect(result).toContain("一只猫");
+    expect(result).not.toContain("电影级写实风格");
+    expect(result).toContain("超高细节");
+  });
+
+  it("should keep photorealistic phrases for photography skill type", async () => {
+    const result = await service.refine(
+      "一只猫",
+      "text-to-image",
+      "professional portrait photography, {prompt}",
+      "photography",
+    );
+    expect(result).toContain("professional portrait photography");
+    expect(result).toContain("电影级写实风格");
+    expect(result).toContain("超高细节");
+  });
+
   it("should return empty prompt as is", async () => {
     const result = await service.refine("  ", "text-to-image");
     expect(result.trim()).toBe("");
+  });
+
+  it("should polish text-to-image prompt via Agnes chat", async () => {
+    const originalFetch = globalThis.fetch;
+    const originalKey = process.env.IMAGE_GENERATION_API_KEY;
+    const originalUrl = process.env.IMAGE_GENERATION_API_URL;
+    process.env.IMAGE_GENERATION_API_KEY = "test-key";
+    process.env.IMAGE_GENERATION_API_URL = "https://apihub.agnes-ai.com/v1/images/generations";
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: vi.fn().mockResolvedValue(""),
+      json: vi.fn().mockResolvedValue({
+        choices: [{ message: { content: "A cute cat playing on grass, soft sunlight, 8k ultra detail" } }],
+      }),
+    } as unknown as Response);
+
+    const result = await service.polish("一只猫", "text-to-image");
+    expect(result).toContain("A cute cat");
+
+    globalThis.fetch = originalFetch;
+    process.env.IMAGE_GENERATION_API_KEY = originalKey;
+    process.env.IMAGE_GENERATION_API_URL = originalUrl;
+  });
+
+  it("should skip LLM polish for image-to-image", async () => {
+    const result = await service.polish("改为赛博朋克风格", "image-to-image");
+    expect(result).toContain("改变要求：改为赛博朋克风格");
   });
 });
