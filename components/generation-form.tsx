@@ -222,13 +222,11 @@ export function GenerationForm({
       )}
 
       {isLoading && (
-        <div className="frosted-overlay flex items-center justify-center">
-          <GenerationLoader
-            size="lg"
-            phases={["正在构思画面", "正在生成图像", "正在润色细节", "即将完成"]}
-            showProgress
-          />
-        </div>
+        <GenerationLoader
+          fullscreen
+          phases={["正在构思画面", "正在生成图像", "正在润色细节", "即将完成"]}
+          showProgress
+        />
       )}
     </div>
   );

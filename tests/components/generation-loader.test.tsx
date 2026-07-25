@@ -11,7 +11,7 @@ describe("GenerationLoader", () => {
     vi.useRealTimers();
   });
 
-  it("shows the current phase and estimated progress", () => {
+  it("shows the current phase and estimated progress when no explicit progress is provided", () => {
     vi.useFakeTimers();
 
     render(
@@ -27,12 +27,40 @@ describe("GenerationLoader", () => {
     expect(screen.getByText("0%")).toBeInTheDocument();
 
     act(() => {
-      vi.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(12000);
     });
 
     expect(screen.getByText("正在生成图像")).toBeInTheDocument();
     expect(screen.getByRole("status").getAttribute("aria-label")).toMatch(
       /当前进度 [1-9]\d?%/,
+    );
+  });
+
+  it("renders real-time progress explicitly when progress prop is provided", () => {
+    const { rerender } = render(
+      <GenerationLoader
+        phases={["正在构思画面", "正在生成图像", "正在润色细节", "即将完成"]}
+        showProgress
+        progress={45}
+      />,
+    );
+
+    expect(screen.getByText("45%")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveAccessibleName(
+      "正在生成图像，当前进度 45%",
+    );
+
+    rerender(
+      <GenerationLoader
+        phases={["正在构思画面", "正在生成图像", "正在润色细节", "即将完成"]}
+        showProgress
+        progress={85}
+      />,
+    );
+
+    expect(screen.getByText("85%")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveAccessibleName(
+      "即将完成，当前进度 85%",
     );
   });
 
