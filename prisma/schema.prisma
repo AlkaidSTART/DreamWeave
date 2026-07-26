@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @db.Uuid
+  username  String   @unique
+  email     String   @unique
+  name      String?
+  image     String?
+  provider  String   @default("email")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  jobs GenerationJob[]
+
+  @@map("users")
+}
+
+model GenerationJob {
+  id            String   @id @db.Uuid
+  userId        String   @db.Uuid @map("user_id")
+  type          String
+  status        String
+  prompt        String
+  refinedPrompt String   @map("refined_prompt")
+  skillId       String?  @map("skill_id")
+  imageCount    Int      @map("image_count")
+  ratio         String?
+  quality       String?
+  inputImage    String?  @map("input_image")
+  progress      Int      @default(0)
+  error         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  results GenerationResult[]
+
+  @@index([userId])
+  @@map("generation_jobs")
+}
+
+model GenerationResult {
+  id          String  @id @default(uuid()) @db.Uuid
+  jobId       String  @db.Uuid @map("job_id")
+  imageId     String  @map("image_id")
+  url         String?
+  width       Int?
+  height      Int?
+  status      String
+  storagePath String? @map("storage_path")
+
+  job GenerationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, imageId])
+  @@index([jobId])
+  @@map("generation_results")
+}

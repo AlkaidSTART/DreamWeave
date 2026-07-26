@@ -1,4 +1,5 @@
-import { getJobById } from "@/lib/job-store";
+import { getJobByIdAndUser } from "@/lib/job-store";
+import { createClient } from "@/lib/supabase/server";
 
 function encodeEvent(event: string, data: object) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -8,9 +9,19 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ jobId: string }> },
 ) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response(encodeEvent("error", { error: "请先登录" }), {
+      status: 401,
+      headers: { "Content-Type": "text/event-stream" },
+    });
+  }
+
   const { jobId } = await params;
 
-  if (!(await getJobById(jobId))) {
+  if (!(await getJobByIdAndUser(jobId, user.id))) {
     return new Response(encodeEvent("error", { error: "任务不存在" }), {
       status: 404,
       headers: { "Content-Type": "text/event-stream" },
@@ -24,7 +35,7 @@ export async function GET(
       let previousStatus = "";
 
       const interval = setInterval(async () => {
-        const job = await getJobById(jobId);
+        const job = await getJobByIdAndUser(jobId, user.id);
         if (!job) {
           controller.enqueue(encoder.encode(encodeEvent("error", { error: "任务不存在" })));
           clearInterval(interval);

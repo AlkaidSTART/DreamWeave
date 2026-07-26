@@ -51,6 +51,11 @@ export async function getJob(jobId: string, baseUrl?: string): Promise<Generatio
   return handleResponse<GenerationJob>(response);
 }
 
+export async function listJobs(limit = 50, offset = 0): Promise<GenerationJob[]> {
+  const response = await fetch(`${API_BASE}/jobs?limit=${limit}&offset=${offset}`);
+  return handleResponse<GenerationJob[]>(response);
+}
+
 export async function fetchSkills(): Promise<Skill[]> {
   const response = await fetch(`${API_BASE}/skills`);
   const data = await handleResponse<{ skills: Skill[] }>(response);
