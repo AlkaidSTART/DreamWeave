@@ -62,13 +62,8 @@ export function LoginForm() {
   };
 
   return (
-    <div
-      className={cn(
-        "w-full max-w-md rounded-3xl border border-white/45 bg-white/65 p-8 shadow-xl backdrop-blur-2xl",
-        "dark:border-white/10 dark:bg-[rgba(30,34,45,0.72)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.38)]",
-      )}
-    >
-      <div className="mb-8 flex flex-col items-center text-center">
+    <>
+      <div className="auth-brand mb-8 flex flex-col items-center text-center">
         <Link
           href="/"
           className="mb-4 flex items-center gap-2.5 text-foreground transition-opacity hover:opacity-85"
@@ -78,7 +73,7 @@ export function LoginForm() {
             Dreamweave
           </span>
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="auth-title text-2xl font-semibold tracking-tight text-foreground">
           欢迎回来
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -86,7 +81,7 @@ export function LoginForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="auth-form space-y-4">
         <div className="space-y-1.5">
           <label
             htmlFor="username"
@@ -166,7 +161,7 @@ export function LoginForm() {
         GitHub
       </Button>
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      <p className="auth-footer mt-6 text-center text-sm text-muted-foreground">
         还没有账号？
         <Link
           href="/register"
@@ -175,6 +170,6 @@ export function LoginForm() {
           立即注册
         </Link>
       </p>
-    </div>
+    </>
   );
 }
