@@ -1,18 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "@/app/api/auth/register/route";
 
+const { createUserMock } = vi.hoisted(() => ({
+  createUserMock: vi.fn(),
+}));
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn().mockReturnValue({
+    auth: {
+      admin: {
+        createUser: createUserMock,
+      },
+    },
+  }),
+}));
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
       findFirst: vi.fn(),
       create: vi.fn(),
     },
-  },
-}));
-
-vi.mock("bcryptjs", () => ({
-  default: {
-    hash: vi.fn().mockResolvedValue("hashed-password"),
   },
 }));
 
@@ -30,16 +38,21 @@ describe("POST /api/auth/register", () => {
   beforeEach(() => {
     vi.mocked(prisma.user.findFirst).mockReset();
     vi.mocked(prisma.user.create).mockReset();
+    createUserMock.mockReset();
   });
 
   it("should register a new user with valid credentials", async () => {
     vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
+    createUserMock.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+      error: null,
+    });
     vi.mocked(prisma.user.create).mockResolvedValue({ id: "user-1" } as never);
 
     const response = await POST(createRequest({
       username: "newuser",
-      password: "password123",
       email: "newuser@example.com",
+      password: "password123",
     }) as unknown as import("next/server").NextRequest);
 
     expect(response.status).toBe(201);
@@ -63,6 +76,7 @@ describe("POST /api/auth/register", () => {
 
     const response = await POST(createRequest({
       username: "existing",
+      email: "existing@example.com",
       password: "password123",
     }) as unknown as import("next/server").NextRequest);
 

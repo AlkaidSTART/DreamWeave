@@ -7,8 +7,12 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-vi.mock("next-auth/react", () => ({
-  signIn: vi.fn().mockResolvedValue({ error: null }),
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({
+    auth: {
+      signInWithOAuth: vi.fn().mockResolvedValue({ error: null }),
+    },
+  }),
 }));
 
 describe("LoginForm", () => {
