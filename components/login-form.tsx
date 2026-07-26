@@ -7,7 +7,6 @@ import { BrandMark } from "@/components/brand-mark";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 
 export function LoginForm() {
   const router = useRouter();

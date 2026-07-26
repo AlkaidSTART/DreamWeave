@@ -7,7 +7,6 @@ import { AuthShell } from "@/components/auth-shell";
 import { BrandMark } from "@/components/brand-mark";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
   const router = useRouter();
