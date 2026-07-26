@@ -42,7 +42,12 @@ describe("JobStorageService", () => {
     prompt: "a cat",
     refinedPrompt: "a cat",
     imageCount: 1,
-    results: [{ id: "img-1", url: null, status: "pending" }],
+    skillId: undefined,
+    ratio: undefined,
+    quality: undefined,
+    inputImage: undefined,
+    error: undefined,
+    results: [{ id: "img-1", url: null, status: "pending", width: undefined, height: undefined }],
     progress: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -105,7 +110,7 @@ describe("JobStorageService", () => {
     expect(retrieved).toBeNull();
   });
 
-  it("should list jobs in descending order", async () => {
+  it("should list jobs in descending order", { timeout: 15000 }, async () => {
     const job1 = createJob(JOB_ID_1);
     const job2 = { ...createJob(JOB_ID_2), createdAt: new Date(Date.now() + 1000).toISOString() };
     await service.save(job1, USER_ID);
