@@ -1,21 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "@/app/api/auth/register/route";
 
-const findFirstMock = vi.fn();
-const createMock = vi.fn();
-
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
-      findFirst: findFirstMock,
-      create: createMock,
+      findFirst: vi.fn(),
+      create: vi.fn(),
     },
   },
 }));
 
 vi.mock("bcryptjs", () => ({
-  hash: vi.fn().mockResolvedValue("hashed-password"),
+  default: {
+    hash: vi.fn().mockResolvedValue("hashed-password"),
+  },
 }));
+
+const { prisma } = await import("@/lib/prisma");
 
 function createRequest(body: unknown): Request {
   return new Request("http://localhost/api/auth/register", {
@@ -27,13 +28,13 @@ function createRequest(body: unknown): Request {
 
 describe("POST /api/auth/register", () => {
   beforeEach(() => {
-    findFirstMock.mockReset();
-    createMock.mockReset();
+    vi.mocked(prisma.user.findFirst).mockReset();
+    vi.mocked(prisma.user.create).mockReset();
   });
 
   it("should register a new user with valid credentials", async () => {
-    findFirstMock.mockResolvedValue(null);
-    createMock.mockResolvedValue({ id: "user-1" });
+    vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.user.create).mockResolvedValue({ id: "user-1" } as never);
 
     const response = await POST(createRequest({
       username: "newuser",
@@ -58,7 +59,7 @@ describe("POST /api/auth/register", () => {
   });
 
   it("should reject duplicate users", async () => {
-    findFirstMock.mockResolvedValue({ id: "existing-user" });
+    vi.mocked(prisma.user.findFirst).mockResolvedValue({ id: "existing-user" } as never);
 
     const response = await POST(createRequest({
       username: "existing",
