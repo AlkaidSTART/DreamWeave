@@ -7,6 +7,7 @@ import "@fontsource/outfit/700.css";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/auth-provider";
 import { PageTransition } from "@/components/page-transition";
 
 export const metadata: Metadata = {
@@ -53,9 +54,11 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <ThemeProvider>
-          <PageTransition>{children}</PageTransition>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <PageTransition>{children}</PageTransition>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
