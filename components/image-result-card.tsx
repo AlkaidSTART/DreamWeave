@@ -1,9 +1,12 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import Image from "next/image";
+import { gsap } from "gsap";
 import { Download, Maximize2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { GenerationLoader } from "@/components/generation-loader";
+import { prefersReducedMotion } from "@/lib/home-animation-utils";
 import type { GeneratedImage } from "@/lib/types";
 
 interface ImageResultCardProps {
@@ -17,26 +20,71 @@ export function ImageResultCard({
   onPreview,
   onRegenerate,
 }: ImageResultCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (prefersReducedMotion() || !cardRef.current) return;
+
+    const ctx = gsap.context(() => {
+      if (image.status === "completed" && image.url && imageRef.current) {
+        gsap.fromTo(
+          imageRef.current,
+          { opacity: 0, scale: 0.96, filter: "blur(8px)" },
+          {
+            opacity: 1,
+            scale: 1,
+            filter: "blur(0px)",
+            duration: 0.7,
+            ease: "power2.out",
+            clearProps: "filter",
+          },
+        );
+      }
+
+      if (image.status === "failed" && cardRef.current) {
+        gsap.fromTo(
+          cardRef.current,
+          { x: -4 },
+          {
+            x: 4,
+            duration: 0.08,
+            repeat: 5,
+            yoyo: true,
+            ease: "power1.inOut",
+            clearProps: "x",
+          },
+        );
+      }
+    }, cardRef.current);
+
+    return () => ctx.revert();
+  }, [image.status, image.url]);
+
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card/70 p-3 shadow-sm backdrop-blur-md">
+    <div
+      ref={cardRef}
+      className="result-card flex flex-col gap-3 rounded-2xl border border-border bg-card/70 p-3 shadow-sm backdrop-blur-md will-change-transform"
+    >
       <div className="relative aspect-square overflow-hidden rounded-[10px] bg-card/80">
         {image.status === "completed" && image.url ? (
-          <Image
-            src={image.url}
-            alt="生成结果"
-            fill
-            className="object-cover animate-reveal"
-            sizes="(max-width: 640px) 100vw, 50vw"
-          />
+          <div ref={imageRef} className="absolute inset-0 will-change-transform">
+            <Image
+              src={image.url}
+              alt="生成结果"
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, 50vw"
+            />
+          </div>
         ) : image.status === "failed" ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-error">
             <RefreshCw className="h-6 w-6" />
             <span className="text-sm">生成失败</span>
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
-            <Spinner className="text-primary" />
-            <span className="text-sm">生成中...</span>
+          <div className="flex h-full w-full flex-col items-center justify-center">
+            <GenerationLoader size="md" label="生成中..." />
           </div>
         )}
       </div>

@@ -1,7 +1,8 @@
 import type {
+  ApiResponse,
   CreateGenerationRequest,
-  CreateGenerationResponse,
   GenerationJob,
+  RefineResponse,
   Skill,
   UploadImageResponse,
 } from "@/lib/types";
@@ -13,23 +14,46 @@ async function handleResponse<T>(response: Response): Promise<T> {
     const body = await response.text();
     throw new Error(body || `请求失败：${response.status}`);
   }
-  return response.json() as Promise<T>;
+  const result = (await response.json()) as ApiResponse<T>;
+  if (!result.success) {
+    throw new Error(result.error || "请求失败");
+  }
+  if (result.data === undefined) {
+    throw new Error("响应中缺少数据");
+  }
+  return result.data;
 }
 
-export async function createGeneration(
-  request: CreateGenerationRequest,
-): Promise<CreateGenerationResponse> {
+export async function createGeneration(request: CreateGenerationRequest): Promise<GenerationJob> {
   const response = await fetch(`${API_BASE}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
   });
-  return handleResponse<CreateGenerationResponse>(response);
+  return handleResponse<GenerationJob>(response);
+}
+
+export async function refinePrompt(
+  prompt: string,
+  type: "text-to-image" | "image-to-image",
+  skillId?: string,
+): Promise<RefineResponse> {
+  const response = await fetch(`${API_BASE}/refine`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, type, skillId }),
+  });
+  return handleResponse<RefineResponse>(response);
 }
 
 export async function getJob(jobId: string, baseUrl?: string): Promise<GenerationJob> {
   const response = await fetch(`${baseUrl ?? ""}${API_BASE}/jobs/${jobId}`);
   return handleResponse<GenerationJob>(response);
+}
+
+export async function listJobs(limit = 50, offset = 0): Promise<GenerationJob[]> {
+  const response = await fetch(`${API_BASE}/jobs?limit=${limit}&offset=${offset}`);
+  return handleResponse<GenerationJob[]>(response);
 }
 
 export async function fetchSkills(): Promise<Skill[]> {
