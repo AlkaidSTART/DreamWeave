@@ -1,29 +1,27 @@
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
 import { ResultView } from "@/components/result-view";
-import { getJob } from "@/lib/api";
+import { getJobByIdAndUser } from "@/lib/job-store";
 import { getGenerationSourceRoute } from "@/lib/generation-route";
+import { createClient } from "@/lib/supabase/server";
 
 interface ResultPageProps {
   params: Promise<{ jobId: string }>;
 }
 
-async function getBaseUrl() {
-  const headersList = await headers();
-  const host = headersList.get("host");
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  return `${protocol}://${host}`;
-}
-
 export default async function ResultPage({ params }: ResultPageProps) {
   const { jobId } = await params;
-  const baseUrl = await getBaseUrl();
 
-  let job;
-  try {
-    job = await getJob(jobId, baseUrl);
-  } catch {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    notFound();
+  }
+
+  const job = await getJobByIdAndUser(jobId, user.id);
+
+  if (!job) {
     notFound();
   }
 
