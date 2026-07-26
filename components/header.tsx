@@ -3,10 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/auth-provider";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -18,7 +18,7 @@ const navItems = [
 
 export function Header() {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { user, isLoading, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 h-16 w-full border-b border-white/35 bg-gradient-to-b from-white/40 via-white/28 to-white/18 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur-2xl dark:border-white/10 dark:from-slate-950/45 dark:via-slate-950/30 dark:to-slate-950/18 dark:shadow-[0_10px_30px_rgba(0,0,0,0.24)]">
@@ -60,30 +60,28 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          {status === "authenticated" && session.user ? (
+          {!isLoading && user ? (
             <div className="flex items-center gap-2">
-              {session.user.image ? (
+              {user.user_metadata?.avatar_url ? (
                 <Image
-                  src={session.user.image}
-                  alt={session.user.name ?? "用户头像"}
+                  src={user.user_metadata.avatar_url as string}
+                  alt={user.user_metadata?.name ? (user.user_metadata.name as string) : "用户头像"}
                   width={32}
                   height={32}
                   className="rounded-full border border-white/30 object-cover dark:border-white/10"
                 />
               ) : (
                 <span className="hidden text-sm font-medium text-foreground sm:inline">
-                  {session.user.name ?? session.user.email ?? "用户"}
+                  {user.user_metadata?.name
+                    ? (user.user_metadata.name as string)
+                    : user.email ?? "用户"}
                 </span>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => signOut({ callbackUrl: "/" })}
-              >
+              <Button variant="ghost" size="sm" onClick={() => signOut()}>
                 退出
               </Button>
             </div>
-          ) : status === "unauthenticated" ? (
+          ) : !isLoading ? (
             <Button variant="secondary" size="sm" asChild>
               <Link href="/login">登录</Link>
             </Button>

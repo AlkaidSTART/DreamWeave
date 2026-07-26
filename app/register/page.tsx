@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { BrandMark } from "@/components/brand-mark";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,35 +36,42 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/register", {
+      const registerResponse = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: form.username,
-          email: form.email || undefined,
+          email: form.email,
           password: form.password,
         }),
       });
 
-      const result = (await response.json()) as {
+      const registerResult = (await registerResponse.json()) as {
         success: boolean;
         error?: string;
       };
 
-      if (!result.success) {
-        setError(result.error ?? "注册失败");
+      if (!registerResult.success) {
+        setError(registerResult.error ?? "注册失败");
         setIsLoading(false);
         return;
       }
 
-      const signInResult = await signIn("credentials", {
-        username: form.username,
-        password: form.password,
-        redirect: false,
-        callbackUrl: "/",
+      const loginResponse = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: form.username,
+          password: form.password,
+        }),
       });
 
-      if (signInResult?.error) {
+      const loginResult = (await loginResponse.json()) as {
+        success: boolean;
+        error?: string;
+      };
+
+      if (!loginResult.success) {
         setError("注册成功，但自动登录失败，请手动登录");
         setIsLoading(false);
         return;
@@ -133,7 +139,7 @@ export default function RegisterPage() {
               htmlFor="email"
               className="text-sm font-medium text-foreground"
             >
-              邮箱（可选）
+              邮箱
             </label>
             <Input
               id="email"
@@ -141,6 +147,7 @@ export default function RegisterPage() {
               placeholder="请输入邮箱"
               value={form.email}
               onChange={(e) => updateField("email", e.target.value)}
+              required
               disabled={isLoading}
               className="h-11 rounded-xl border-white/50 bg-white/60 px-4 placeholder:text-muted-foreground/60 focus-visible:ring-primary/50 dark:border-white/10 dark:bg-white/5"
             />

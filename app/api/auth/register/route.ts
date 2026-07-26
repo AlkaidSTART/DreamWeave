@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
@@ -8,12 +8,17 @@ const registerSchema = z.object({
     .string()
     .min(3, "用户名至少 3 个字符")
     .max(32, "用户名最多 32 个字符"),
+  email: z.string().email("邮箱格式不正确"),
   password: z
     .string()
     .min(6, "密码至少 6 个字符")
     .max(128, "密码最多 128 个字符"),
-  email: z.string().email("邮箱格式不正确").optional(),
 });
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SECRET_KEY!,
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,11 +32,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { username, password, email } = parsed.data;
+    const { username, email, password } = parsed.data;
 
     const existing = await prisma.user.findFirst({
       where: {
-        OR: [{ username }, ...(email ? [{ email }] : [])],
+        OR: [{ username }, { email }],
       },
     });
 
@@ -42,14 +47,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+
+    if (authError || !authData.user) {
+      return NextResponse.json(
+        { success: false, error: authError?.message ?? "创建用户失败" },
+        { status: 500 },
+      );
+    }
 
     await prisma.user.create({
       data: {
+        id: authData.user.id,
         username,
         email,
-        password: hashedPassword,
-        provider: "credentials",
+        provider: "email",
       },
     });
 
