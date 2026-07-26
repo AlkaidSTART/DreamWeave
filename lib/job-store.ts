@@ -1,4 +1,5 @@
 import { ImageGenerationService } from "@/src/services/ImageGenerationService";
+import { imageStorage } from "@/src/services/ImageStorageService";
 import { jobStorage } from "@/src/services/JobStorageService";
 import { promptService } from "@/src/services/PromptService";
 import { getSkillTemplate, getSkillType } from "@/src/skills/templates";
@@ -24,7 +25,23 @@ function getCompletionProgress(index: number, total: number): number {
   return Math.round(((index + 1) / total) * 100);
 }
 
-export async function createJob(request: CreateGenerationRequest): Promise<GenerationJob> {
+async function urlToBlob(url: string): Promise<Blob> {
+  if (url.startsWith("data:")) {
+    const response = await fetch(url);
+    return response.blob();
+  }
+
+  const response = await fetch(url, { signal: AbortSignal.timeout(60000) });
+  if (!response.ok) {
+    throw new Error(`下载图片失败: ${response.status}`);
+  }
+  return response.blob();
+}
+
+export async function createJob(
+  request: CreateGenerationRequest,
+  userId: string,
+): Promise<GenerationJob> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
@@ -45,7 +62,7 @@ export async function createJob(request: CreateGenerationRequest): Promise<Gener
     updatedAt: now,
   };
 
-  await jobStorage.save(job);
+  await jobStorage.save(job, userId);
 
   const skillTemplate = getSkillTemplate(request.skillId);
   const skillType = getSkillType(request.skillId);
@@ -68,7 +85,8 @@ export async function createJob(request: CreateGenerationRequest): Promise<Gener
 
     try {
       const image = await service.generateImage(requestWithRefinedPrompt, job, index);
-      await jobStorage.updateResult(id, image);
+      const uploaded = await uploadGeneratedImage(image, userId, id);
+      await jobStorage.updateResult(id, uploaded.image, uploaded.path);
       await jobStorage.updateProgress(id, getCompletionProgress(index, request.imageCount));
     } catch (error) {
       await jobStorage.updateResult(id, {
@@ -85,11 +103,37 @@ export async function createJob(request: CreateGenerationRequest): Promise<Gener
   await jobStorage.updateProgress(id, 100);
   await jobStorage.updateStatus(id, "completed");
 
-  return jobStorage.get(id) as Promise<GenerationJob>;
+  return (await jobStorage.get(id)) as GenerationJob;
 }
 
-export async function getJobById(id: string): Promise<GenerationJob | undefined> {
-  const job = await jobStorage.get(id);
+async function uploadGeneratedImage(
+  image: GeneratedImage,
+  userId: string,
+  jobId: string,
+): Promise<{ image: GeneratedImage; path?: string }> {
+  if (!image.url) {
+    return { image };
+  }
+
+  const blob = await urlToBlob(image.url);
+  const { url, path } = await imageStorage.uploadImage(userId, jobId, image.id, blob);
+
+  return {
+    image: { ...image, url },
+    path,
+  };
+}
+
+export async function getJobById(jobId: string): Promise<GenerationJob | undefined> {
+  const job = await jobStorage.get(jobId);
+  return job ?? undefined;
+}
+
+export async function getJobByIdAndUser(
+  jobId: string,
+  userId: string,
+): Promise<GenerationJob | undefined> {
+  const job = await jobStorage.getByIdAndUser(jobId, userId);
   return job ?? undefined;
 }
 
@@ -97,6 +141,10 @@ export async function updateJobProgress(id: string, progress: number): Promise<v
   await jobStorage.updateProgress(id, progress);
 }
 
-export async function listJobs(limit = 50, offset = 0): Promise<GenerationJob[]> {
-  return jobStorage.list(limit, offset);
+export async function listJobsByUser(
+  userId: string,
+  limit = 50,
+  offset = 0,
+): Promise<GenerationJob[]> {
+  return jobStorage.list(userId, limit, offset);
 }

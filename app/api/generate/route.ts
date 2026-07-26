@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createJob } from "@/lib/job-store";
+import { createClient } from "@/lib/supabase/server";
 import type { ApiResponse, GenerationJob } from "@/lib/types";
 
 const createGenerationSchema = z.object({
@@ -19,6 +20,16 @@ const createGenerationSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json<ApiResponse>(
+        { success: false, error: "请先登录" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
     const parsed = createGenerationSchema.safeParse(body);
 
@@ -30,7 +41,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const job = await createJob(parsed.data);
+    const job = await createJob(parsed.data, user.id);
 
     const response: ApiResponse<GenerationJob> = {
       success: true,

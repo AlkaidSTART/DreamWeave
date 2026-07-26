@@ -10,10 +10,10 @@ import { PageEntrance } from "@/components/page-entrance";
 import { Button } from "@/components/ui/button";
 import { GenerationLoader } from "@/components/generation-loader";
 import { ImageLightbox } from "@/components/image-lightbox";
-import { listJobsFromDB, deleteJobFromDB, getImagesByJobId } from "@/lib/db";
+import { listJobs, getJob } from "@/lib/api";
 import { toast } from "@/stores/toast-store";
 import { cn } from "@/lib/utils";
-import type { StoredJob, StoredImage } from "@/lib/types";
+import type { GenerationJob } from "@/lib/types";
 
 function formatDate(isoString: string): string {
   const date = new Date(isoString);
@@ -25,11 +25,9 @@ function formatDate(isoString: string): string {
   });
 }
 
-function getJobThumbnail(job: StoredJob, images: StoredImage[]): string | null {
+function getJobThumbnail(job: GenerationJob): string | null {
   const completed = job.results.find((result) => result.status === "completed" && result.url);
-  if (!completed) return null;
-  const stored = images.find((image) => image.id === completed.id);
-  return stored?.objectUrl || completed.url || null;
+  return completed?.url ?? null;
 }
 
 interface LightboxState {
@@ -39,8 +37,7 @@ interface LightboxState {
 
 export default function GalleryPage() {
   const router = useRouter();
-  const [jobs, setJobs] = useState<StoredJob[]>([]);
-  const [images, setImages] = useState<Record<string, StoredImage[]>>({});
+  const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
 
@@ -49,16 +46,9 @@ export default function GalleryPage() {
 
     async function loadGallery() {
       try {
-        const storedJobs = await listJobsFromDB(100);
-        const imagesMap: Record<string, StoredImage[]> = {};
-        await Promise.all(
-          storedJobs.map(async (job) => {
-            imagesMap[job.id] = await getImagesByJobId(job.id);
-          }),
-        );
+        const apiJobs = await listJobs(100);
         if (!cancelled) {
-          setJobs(storedJobs);
-          setImages(imagesMap);
+          setJobs(apiJobs);
         }
       } catch {
         if (!cancelled) {
@@ -80,7 +70,10 @@ export default function GalleryPage() {
 
   const handleDelete = async (jobId: string) => {
     try {
-      await deleteJobFromDB(jobId);
+      const response = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
+      if (!response.ok) {
+        throw new Error("删除失败");
+      }
       setJobs((current) => current.filter((job) => job.id !== jobId));
       toast.success("已删除");
     } catch {
@@ -115,7 +108,7 @@ export default function GalleryPage() {
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {jobs.map((job) => {
-                const thumbnail = getJobThumbnail(job, images[job.id] ?? []);
+                const thumbnail = getJobThumbnail(job);
                 const completedCount = job.results.filter(
                   (result) => result.status === "completed",
                 ).length;
