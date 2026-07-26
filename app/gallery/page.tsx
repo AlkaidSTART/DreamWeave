@@ -10,7 +10,7 @@ import { PageEntrance } from "@/components/page-entrance";
 import { Button } from "@/components/ui/button";
 import { GenerationLoader } from "@/components/generation-loader";
 import { ImageLightbox } from "@/components/image-lightbox";
-import { listJobs, getJob } from "@/lib/api";
+import { listJobs } from "@/lib/api";
 import { toast } from "@/stores/toast-store";
 import { cn } from "@/lib/utils";
 import type { GenerationJob } from "@/lib/types";
