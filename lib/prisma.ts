@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { PrismaClient } from "@/src/generated/prisma/client";
+import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 config({ path: ".env" });
