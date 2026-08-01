@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { ResultStack } from "@/components/result-stack";
 import { ImageLightbox } from "@/components/image-lightbox";
+import { GenerationLoader } from "@/components/generation-loader";
 import { createGeneration, getJob, subscribeJobProgress, type QueueInfo } from "@/lib/api";
 import { toast } from "@/stores/toast-store";
 import { prefersReducedMotion } from "@/lib/home-animation-utils";
@@ -270,6 +271,22 @@ export function ResultView({ initialJob }: ResultViewProps) {
       </Card>
 
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border bg-card/40 p-4 backdrop-blur-md">
+        {(job.status === "pending" || job.status === "processing") && completedCount === 0 && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <GenerationLoader
+              size="lg"
+              progress={job.progress}
+              showProgress
+              phases={[
+                "正在排队",
+                "正在解析提示词",
+                "正在生成图像",
+                "正在保存结果",
+                "即将完成",
+              ]}
+            />
+          </div>
+        )}
         <ResultStack
           images={job.results}
           onPreview={setPreviewImage}

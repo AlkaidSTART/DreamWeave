@@ -5,7 +5,6 @@ import Image from "next/image";
 import { gsap } from "gsap";
 import { Download, Maximize2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GenerationLoader } from "@/components/generation-loader";
 import { prefersReducedMotion } from "@/lib/home-animation-utils";
 import type { GeneratedImage } from "@/lib/types";
 
@@ -83,8 +82,9 @@ export function ImageResultCard({
             <span className="text-sm">生成失败</span>
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center">
-            <GenerationLoader size="md" label="生成中..." />
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+            <div className="h-10 w-10 animate-pulse rounded-full bg-foreground/10" />
+            <span className="text-xs">生成中</span>
           </div>
         )}
       </div>
