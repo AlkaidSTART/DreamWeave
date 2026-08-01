@@ -80,10 +80,16 @@ interface ProgressEventData {
   error?: string;
 }
 
+export interface QueueInfo {
+  position: number;
+  estimatedSeconds: number;
+}
+
 export interface JobProgressHandlers {
   onProgress?: (progress: number) => void;
   onStatusChange?: (status: string) => void;
   onResult?: (result: GenerationJob["results"][number]) => void;
+  onQueueUpdate?: (info: QueueInfo) => void;
   onComplete?: (job: GenerationJob) => void;
   onError?: (error: string) => void;
 }
@@ -99,6 +105,11 @@ export function subscribeJobProgress(
     handlers.onProgress?.(data.progress);
     if (data.status) handlers.onStatusChange?.(data.status);
     data.results?.forEach((result) => handlers.onResult?.(result));
+  });
+
+  source.addEventListener("queue", (event) => {
+    const data = JSON.parse((event as MessageEvent).data) as QueueInfo;
+    handlers.onQueueUpdate?.(data);
   });
 
   source.addEventListener("complete", (event) => {

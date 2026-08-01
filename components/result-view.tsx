@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { ResultStack } from "@/components/result-stack";
 import { ImageLightbox } from "@/components/image-lightbox";
-import { createGeneration, getJob, subscribeJobProgress } from "@/lib/api";
+import { createGeneration, getJob, subscribeJobProgress, type QueueInfo } from "@/lib/api";
 import { toast } from "@/stores/toast-store";
 import { prefersReducedMotion } from "@/lib/home-animation-utils";
 import type { GenerationJob, GeneratedImage, JobStatus } from "@/lib/types";
@@ -49,9 +49,17 @@ function getProgressStage(progress: number, status: JobStatus): string {
   return "即将完成";
 }
 
+function formatEstimatedSeconds(seconds: number): string {
+  if (seconds <= 0) return "";
+  if (seconds < 60) return `${seconds} 秒`;
+  const minutes = Math.ceil(seconds / 60);
+  return `${minutes} 分钟`;
+}
+
 export function ResultView({ initialJob }: ResultViewProps) {
   const router = useRouter();
   const [job, setJob] = useState<GenerationJob>(initialJob);
+  const [queueInfo, setQueueInfo] = useState<QueueInfo | null>(null);
   const [previewImage, setPreviewImage] = useState<GeneratedImage | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
   const [retryingImageId, setRetryingImageId] = useState<string | null>(null);
@@ -77,11 +85,16 @@ export function ResultView({ initialJob }: ResultViewProps) {
           return { ...current, results };
         });
       },
+      onQueueUpdate: (info) => {
+        setQueueInfo(info);
+      },
       onComplete: (completedJob) => {
         setJob(completedJob);
+        setQueueInfo(null);
       },
       onError: (error) => {
         setJob((current) => ({ ...current, status: "failed", error }));
+        setQueueInfo(null);
         toast.error("生成失败", error);
       },
     });
@@ -212,6 +225,11 @@ export function ResultView({ initialJob }: ResultViewProps) {
                 </span>
               )}
             </div>
+            {queueInfo && queueInfo.position > 0 && job.status === "pending" && (
+              <div className="mb-1.5 text-xs text-muted-foreground">
+                前面还有 {queueInfo.position} 个任务排队，预计等待约 {formatEstimatedSeconds(queueInfo.estimatedSeconds)}
+              </div>
+            )}
             <Progress value={job.progress} />
           </div>
           <div className="flex items-center gap-2">

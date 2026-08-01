@@ -13,34 +13,42 @@ const samples: SampleItem[] = [
   {
     prompt: "A serene Japanese garden with cherry blossoms, soft morning light, minimalist composition, ultra detailed, 8k",
     label: "日式庭院",
+    url: "/samples/image_7-clean.png",
   },
   {
     prompt: "Futuristic neon cityscape at night, cyberpunk aesthetic, rain soaked streets with reflections, cinematic lighting",
     label: "赛博都市",
+    url: "/samples/image_3-clean.png",
   },
   {
     prompt: "Cute fluffy kitten playing on fresh green grass, golden hour sunlight, photorealistic, high detail",
     label: "萌宠时光",
+    url: "/samples/image_8-clean.png",
   },
   {
     prompt: "Elegant minimalist product photography of a luxury perfume bottle, soft gradient background, studio lighting",
     label: "极简产品",
+    url: "/samples/image_4-clean.png",
   },
   {
     prompt: "Dreamy watercolor landscape with misty mountains and pine trees, pastel colors, artistic hand painted style",
     label: "水墨山水",
+    url: "/samples/image_6-clean.png",
   },
   {
     prompt: "Modern abstract 3D render with smooth geometric shapes, vibrant gradients, clean composition, soft shadows",
     label: "抽象几何",
+    url: "/samples/image_1-clean.png",
   },
   {
     prompt: "Vintage film portrait of a young woman, warm golden tones, soft bokeh background, cinematic mood",
     label: "复古肖像",
+    url: "/samples/image_2-clean.png",
   },
   {
     prompt: "Surreal floating islands in a cloudy sky, fantasy art, dramatic lighting, epic scale, highly detailed",
     label: "奇幻浮岛",
+    url: "/samples/image_5-clean.png",
   },
 ];
 

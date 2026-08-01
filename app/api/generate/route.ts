@@ -4,6 +4,9 @@ import { createJob } from "@/lib/job-store";
 import { createClient } from "@/lib/supabase/server";
 import type { ApiResponse, GenerationJob } from "@/lib/types";
 
+// 启动图像生成 worker（仅用于副作用）
+import "@/src/queue/imageWorker";
+
 const createGenerationSchema = z.object({
   type: z.enum(["text-to-image", "image-to-image"]),
   prompt: z.string().min(1).max(2000),
