@@ -1,4 +1,5 @@
 import { getJobByIdAndUser } from "@/lib/job-store";
+import { getQueuePosition } from "@/src/queue/imageQueue";
 import { createClient } from "@/lib/supabase/server";
 
 function encodeEvent(event: string, data: object) {
@@ -33,6 +34,7 @@ export async function GET(
       const encoder = new TextEncoder();
       let previousProgress = -1;
       let previousStatus = "";
+      let previousQueuePosition = -1;
 
       const interval = setInterval(async () => {
         const job = await getJobByIdAndUser(jobId, user.id);
@@ -58,6 +60,20 @@ export async function GET(
               }),
             ),
           );
+        }
+
+        if (job.status === "pending" || job.status === "processing") {
+          try {
+            const queueInfo = await getQueuePosition(jobId);
+            if (queueInfo.position !== previousQueuePosition) {
+              previousQueuePosition = queueInfo.position;
+              controller.enqueue(
+                encoder.encode(encodeEvent("queue", queueInfo)),
+              );
+            }
+          } catch (error) {
+            console.error("[stream] 获取队列位置失败:", error);
+          }
         }
 
         if (job.status === "completed") {

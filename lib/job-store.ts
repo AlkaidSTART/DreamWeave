@@ -3,6 +3,7 @@ import { imageStorage } from "@/src/services/ImageStorageService";
 import { jobStorage } from "@/src/services/JobStorageService";
 import { promptService } from "@/src/services/PromptService";
 import { getSkillTemplate, getSkillType } from "@/src/skills/templates";
+import { addImageGenerationJob } from "@/src/queue/imageQueue";
 import type {
   CreateGenerationRequest,
   GenerationJob,
@@ -64,6 +65,21 @@ export async function createJob(
 
   await jobStorage.save(job, userId);
 
+  await addImageGenerationJob(id, userId, request);
+
+  return job;
+}
+
+export async function processGenerationJob(
+  jobId: string,
+  userId: string,
+  request: CreateGenerationRequest,
+): Promise<void> {
+  const jobRecord = await jobStorage.get(jobId);
+  if (!jobRecord) {
+    throw new Error(`任务不存在: ${jobId}`);
+  }
+
   const skillTemplate = getSkillTemplate(request.skillId);
   const skillType = getSkillType(request.skillId);
   const refinedPrompt = await promptService.refine(
@@ -72,38 +88,35 @@ export async function createJob(
     skillTemplate,
     skillType,
   );
-  job.refinedPrompt = refinedPrompt;
-  await jobStorage.updatePrompt(id, refinedPrompt);
+
+  await jobStorage.updatePrompt(jobId, refinedPrompt);
+  await jobStorage.updateStatus(jobId, "processing");
 
   const service = new ImageGenerationService();
   const requestWithRefinedPrompt = { ...request, prompt: refinedPrompt };
 
-  await jobStorage.updateStatus(id, "processing");
-
   for (let index = 0; index < request.imageCount; index += 1) {
-    await jobStorage.updateProgress(id, getInitialProgress(index, request.imageCount));
+    await jobStorage.updateProgress(jobId, getInitialProgress(index, request.imageCount));
 
     try {
-      const image = await service.generateImage(requestWithRefinedPrompt, job, index);
-      const uploaded = await uploadGeneratedImage(image, userId, id);
-      await jobStorage.updateResult(id, uploaded.image, uploaded.path);
-      await jobStorage.updateProgress(id, getCompletionProgress(index, request.imageCount));
+      const image = await service.generateImage(requestWithRefinedPrompt, jobRecord, index);
+      const uploaded = await uploadGeneratedImage(image, userId, jobId);
+      await jobStorage.updateResult(jobId, uploaded.image, uploaded.path);
+      await jobStorage.updateProgress(jobId, getCompletionProgress(index, request.imageCount));
     } catch (error) {
-      await jobStorage.updateResult(id, {
+      await jobStorage.updateResult(jobId, {
         id: `img-${index + 1}`,
         url: null,
         status: "failed",
       });
       const message = error instanceof Error ? error.message : "生成失败";
-      await jobStorage.updateStatus(id, "failed", message);
+      await jobStorage.updateStatus(jobId, "failed", message);
       throw error;
     }
   }
 
-  await jobStorage.updateProgress(id, 100);
-  await jobStorage.updateStatus(id, "completed");
-
-  return (await jobStorage.get(id)) as GenerationJob;
+  await jobStorage.updateProgress(jobId, 100);
+  await jobStorage.updateStatus(jobId, "completed");
 }
 
 async function uploadGeneratedImage(
