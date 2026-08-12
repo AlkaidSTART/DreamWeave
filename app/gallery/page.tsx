@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Trash2, RefreshCw, ImageIcon, Maximize2 } from "lucide-react";
+import { Trash2, RefreshCw, ImageIcon, Maximize2, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { PageEntrance } from "@/components/page-entrance";
 import { Button } from "@/components/ui/button";
-import { GenerationLoader } from "@/components/generation-loader";
 import { ImageLightbox } from "@/components/image-lightbox";
 import { listJobs } from "@/lib/api";
 import { toast } from "@/stores/toast-store";
@@ -91,8 +90,9 @@ export default function GalleryPage() {
       >
         <div className="mx-auto max-w-6xl px-4 pt-6 md:px-6 lg:px-8">
           {loading ? (
-            <div className="flex h-64 items-center justify-center">
-              <GenerationLoader size="md" label="加载中..." />
+            <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="text-sm">加载中...</span>
             </div>
           ) : jobs.length === 0 ? (
             <div className="flex h-96 flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-border bg-card/40 p-8 text-center">

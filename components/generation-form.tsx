@@ -220,14 +220,6 @@ export function GenerationForm({
           </Button>
         </div>
       )}
-
-      {isLoading && (
-        <GenerationLoader
-          fullscreen
-          phases={["正在构思画面", "正在生成图像", "正在润色细节", "即将完成"]}
-          showProgress
-        />
-      )}
     </div>
   );
 }
